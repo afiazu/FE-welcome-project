@@ -1,0 +1,25 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:welcome_project_fe/util/ImageConstants.dart';
+import 'package:welcome_project_fe/util/IconConstants.dart';
+import 'package:welcome_project_fe/util/ColorConstants.dart';
+import 'package:welcome_project_fe/view/screens/login.dart';
+
+// Declare router as late final so it can be initialized later
+late final GoRouter router;
+
+
+
+void initializeGoRouter() {
+  router = GoRouter(
+    initialLocation: '/login', 
+    routes: [
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => LoginScreen(
+        ),
+      ),
+
+    ]
+  );
+}
