@@ -21,7 +21,6 @@ class ApiService {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
-        print('Backend is healthy: ${response.body}');
         return jsonDecode(response.body);
       } else {
         throw Exception('Failed to connect: ${response.statusCode}');
