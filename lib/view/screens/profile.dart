@@ -1,31 +1,137 @@
 import 'package:flutter/material.dart';
+import 'package:welcome_project_fe/model/user.dart';
 import 'package:welcome_project_fe/util/ImageConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
+import 'package:welcome_project_fe/api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<ProfileScreen> createState() => ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class ProfileScreenState extends State<ProfileScreen> {
   bool isEditingProfile = false;
   bool isEditingPassword = false;
+  bool isLoading = false;
 
-  final TextEditingController usernameController = TextEditingController(
-    text: 'john.anderson',
-  );
-  final TextEditingController emailController = TextEditingController(
-    text: 'john.anderson@example.com',
-  );
-  final TextEditingController currentPasswordController =
-      TextEditingController();
+  final int userId = 1; // Example user ID, replace with actual user ID from auth context
+  UserModel? currentUser;
+
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController currentPasswordController = TextEditingController();
   final TextEditingController newPasswordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    loadUserData();
+  }
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    emailController.dispose();
+    currentPasswordController.dispose();
+    newPasswordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> loadUserData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      UserModel user = await ApiService.getUserById(userId.toString());
+
+      setState(() {
+        currentUser = user;
+        usernameController.text = user.username;
+        emailController.text = user.userEmail;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> saveProfileChanges() async {
+    try {
+      await ApiService.updateUserInfo(
+        userId.toString(),
+        usernameController.text.trim(),
+        emailController.text.trim(),
+      );
+      await loadUserData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save profile: $e')));
+      }
+    }
+  }
+
+  Future<void> savePasswordChanges() async {
+    final currentPass = currentPasswordController.text.trim();
+    final newPass = newPasswordController.text.trim();
+    final confirmPass = confirmPasswordController.text.trim();
+
+    if (currentPass.isEmpty || newPass.isEmpty || confirmPass.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please fill in all password fields')),
+        );
+      }
+      return;
+    }
+
+    if (newPass != confirmPass) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('New password and confirmation do not match'),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      await ApiService.updateUserPassword(
+        userId.toString(),
+        currentPass,
+        newPass,
+      );
+
+      currentPasswordController.clear();
+      newPasswordController.clear();
+      confirmPasswordController.clear();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password updated successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update password: $e')),
+        );
+      }
+    }
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 234, 232, 232),
@@ -40,43 +146,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         backgroundColor: ColorConstants.ubtsBlue,
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          bool isMobile = constraints.maxWidth < 600;
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                bool isMobile = constraints.maxWidth < 600;
 
-          if (isMobile) {
-            // MOBILE VIEW: Stack everything vertically
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  buildLeftCard(context),
-                  const SizedBox(height: 20),
-                  buildRightCard(context),
-                ],
-              ),
-            );
-          } else {
-            // DESKTOP VIEW: Side-by-side layout
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(32),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(flex: 1, child: buildLeftCard(context)),
+                if (isMobile) {
+                  // MOBILE VIEW: Stack everything vertically
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        buildLeftCard(context),
+                        const SizedBox(height: 20),
+                        buildRightCard(context),
+                      ],
+                    ),
+                  );
+                } else {
+                  // DESKTOP VIEW: Side-by-side layout
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(32),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 1, child: buildLeftCard(context)),
 
-                  const SizedBox(width: 32),
+                        const SizedBox(width: 32),
 
-                  Expanded(
-                    flex: 2, // Right side gets more space
-                    child: buildRightCard(context),
-                  ),
-                ],
-              ),
-            );
-          }
-        },
-      ),
+                        Expanded(
+                          flex: 2, // Right side gets more space
+                          child: buildRightCard(context),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              },
+            ),
     );
   }
 
@@ -92,41 +200,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
       color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundImage: AssetImage(ImageConstants.UBTSlogo),
-          ),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundImage: AssetImage(ImageConstants.UBTSlogo),
+            ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          const Text(
-            'John Anderson',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
+            Text(
+              currentUser?.username ?? usernameController.text,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          const Divider(),
+            const Divider(),
 
-          buildInfoRow('Member Since:', 'January 15, 2024'),
+            buildInfoRow(
+              'Member Since:',
+              currentUser?.createdAt.isNotEmpty == true
+                  ? currentUser!.createdAt
+                  : 'January 15, 2024',
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.logout, color: Colors.red),
-              label: const Text('Logout', style: TextStyle(color: Colors.red)),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.red),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.logout, color: Colors.red),
+                label: const Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.red),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.red),
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -142,7 +258,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: TextStyle(color: Colors.grey, fontSize: 14),
           ),
           isEditing: isEditingProfile,
-          onButtonPressed: () {
+          onButtonPressed: () async {
+            if (isEditingProfile) {
+              await saveProfileChanges();
+            }
             setState(() {
               isEditingProfile = !isEditingProfile;
             });
@@ -161,39 +280,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: TextStyle(color: Colors.grey, fontSize: 14),
           ),
           isEditing: isEditingPassword,
-          onButtonPressed: () {
+          onButtonPressed: () async {
+            if (isEditingPassword) {
+              await savePasswordChanges();
+            }
+
             setState(() {
               isEditingPassword = !isEditingPassword;
             });
           },
           buttonText: isEditingPassword ? 'Save Changes' : 'Change Password',
           child: isEditingPassword ? buildPasswordForm() : buildPasswordView(),
-        ),
-
-        const SizedBox(height: 20),
-
-        buildSectionCard(
-          title: 'Recent Activity',
-          subtitle: const Text(
-            'Your recent account activities and changes.',
-            style: TextStyle(color: Colors.grey, fontSize: 14),
-          ),
-          child: Column(
-            children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('Updated profile information'),
-                subtitle: const Text('Today at 9:45 AM'),
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.lock_outline),
-                title: const Text('Changed password'),
-                subtitle: const Text('Yesterday at 6:30 PM'),
-              ),
-            ],
-          ),
         ),
       ],
     );
@@ -203,10 +300,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget buildProfileView() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text('Username: john.anderson'),
-        SizedBox(height: 8),
-        Text('Email: john.a@warehouse.com'),
+      children: [
+        Text('Username: ${currentUser?.username ?? usernameController.text}'),
+        const SizedBox(height: 8),
+        Text('Email: ${currentUser?.userEmail ?? emailController.text}'),
+        const SizedBox(height: 8),
+        Text('Last Updated: ${currentUser?.updatedAt ?? 'N/A'}'),
       ],
     );
   }
@@ -240,9 +339,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: const [
-        Text('Last changed: January 10, 2024'),
-        SizedBox(height: 8),
-        Text('Password strength: Strong'),
+        Text("Don't worry, we won't show your password here!"),
       ],
     );
   }
@@ -252,6 +349,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextField(
+          controller: currentPasswordController,
           obscureText: true,
           decoration: const InputDecoration(
             labelText: 'Current Password',
@@ -262,6 +360,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 16),
 
         TextField(
+          controller: newPasswordController,
           obscureText: true,
           decoration: const InputDecoration(
             labelText: 'New Password',
@@ -272,6 +371,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 16),
 
         TextField(
+          controller: confirmPasswordController,
           obscureText: true,
           decoration: const InputDecoration(
             labelText: 'Confirm New Password',
