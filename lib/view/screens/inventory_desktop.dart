@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:welcome_project_fe/model/inventory.dart';
+import 'package:welcome_project_fe/api_service.dart';
 
 class InventoryDesktop extends StatefulWidget {
   const InventoryDesktop({super.key});
@@ -10,81 +11,103 @@ class InventoryDesktop extends StatefulWidget {
 }
 
 class _InventoryDesktopState extends State<InventoryDesktop> {
-  //fake data
-  List<Inventory> items = [
-    Inventory(
-      id: 101,
-      name: 'Laptop - Dell XPS 15',
-      description: 'High-performance business laptop',
-      quantity: 45,
-      status: 'Active',
-      location: 'Warehouse A',
-    ),
-    Inventory(
-      id: 102,
-      name: 'Ergonomic Office Chair',
-      description: 'Adjustable chair with lumbar support',
-      quantity: 120,
-      status: 'Active',
-      location: 'Warehouse B',
-    ),
-    Inventory(
-      id: 103,
-      name: 'Wireless Mouse - Logitech',
-      description: '2.4GHz wireless optical mouse',
-      quantity: 0,
-      status: 'Discontinued',
-      location: 'Warehouse A',
-    ),
-    Inventory(
-      id: 104,
-      name: '27-inch 4K Monitor',
-      description: 'Ultra HD display monitor',
-      quantity: 32,
-      status: 'Active',
-      location: 'Warehouse C',
-    ),
-    Inventory(
-      id: 105,
-      name: 'LED Desk Lamp',
-      description: 'Energy-saving desk lamp',
-      quantity: 78,
-      status: 'Archived',
-      location: 'Warehouse B',
-    ),
-    Inventory(
-      id: 106,
-      name: 'USB-C Hub',
-      description: 'Multi-port adapter hub',
-      quantity: 156,
-      status: 'Active',
-      location: 'Warehouse A',
-    ),
-    Inventory(
-      id: 107,
-      name: 'Mechanical Keyboard',
-      description: 'RGB mechanical keyboard',
-      quantity: 0,
-      status: 'Discontinued',
-      location: 'Warehouse C',
-    ),
-    Inventory(
-      id: 108,
-      name: 'Standing Desk',
-      description: 'Height adjustable desk',
-      quantity: 24,
-      status: 'Active',
-      location: 'Warehouse B',
-    ),
-  ];
+  
+  List<Inventory> items = [];
+    @override
+    void initState() {
+    super.initState();
+    loadInventory();
+    loadCategories();
+
+}
+
+  Future<void> loadInventory() async {
+  try {
+    final data = await ApiService.getAllInventoryItems();
+
+    setState(() {
+      items = data
+          .map((item) => Inventory.fromJson(item))
+          .toList();
+    });
+        print('items length: ${items.length}');
+
+  } catch (e) {
+    print(e);
+  }
+}
+
+Future<void> loadCategories() async {
+  try {
+    final data = await ApiService.getAllCategories();
+
+    setState(() {
+      categories = [
+        'All Categories',
+        ...data.map((item) => item['category_name'].toString()),
+      ];
+    });
+
+    print('categories length: ${categories.length}');
+  } catch (e) {
+    print('loadCategories error: $e');
+  }
+}
+
+Future<void> searchInventory(String name) async {
+  try {
+    if (name.isEmpty) {
+      loadInventory();
+      return;
+    }
+
+    final data = await ApiService.searchInventoryByName(name);
+
+    setState(() {
+      items = data
+          .map((item) => Inventory.fromJson(item))
+          .toList();
+    });
+
+    print('search items length: ${items.length}');
+  } catch (e) {
+    print('searchInventory error: $e');
+  }
+}
+
+Future<void> filterByCategory(String categoryName) async {
+  try {
+    if (categoryName == 'All Categories') {
+      loadInventory();
+      return;
+    }
+
+    final data = await ApiService.getAllCategories();
+
+    final selected = data.firstWhere(
+      (item) => item['category_name'] == categoryName,
+    );
+
+    final int categoryId = selected['category_id'];
+
+    final inventoryData =
+        await ApiService.getInventoryByCategoryID(categoryId);
+
+    setState(() {
+      items = inventoryData
+          .map((item) => Inventory.fromJson(item))
+          .toList();
+    });
+
+    print('filtered items length: ${items.length}');
+  } catch (e) {
+    print('filterByCategory error: $e');
+  }
+}
 
   String selectedCategory = 'All Categories';
 
-  final List<String> categories = [
-    'All Categories',
-    'Electronics',
-    'Furniture',
-  ];
+List<String> categories = ['All Categories'];
 
   int get totalItems => items.length;
 
@@ -96,6 +119,8 @@ class _InventoryDesktopState extends State<InventoryDesktop> {
 
   int get archivedItems =>
       items.where((item) => item.status == 'Archived').length;
+
+  TextEditingController searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -124,6 +149,7 @@ class _InventoryDesktopState extends State<InventoryDesktop> {
 
               Expanded(
                 child: Container(
+                  
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -140,7 +166,12 @@ class _InventoryDesktopState extends State<InventoryDesktop> {
                                 color: Colors.grey[200],
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const TextField(
+                              child:  TextField(
+                                controller:searchController,
+                                onChanged: (value){
+                                  searchInventory(value);
+                                },
+  
                                 decoration: InputDecoration(
                                   hintText: 'Search inventory...',
                                   prefixIcon: Icon(Icons.search),
@@ -150,7 +181,7 @@ class _InventoryDesktopState extends State<InventoryDesktop> {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          
+
                           Container(
                             height: 50,
                             width: 160,
@@ -170,9 +201,12 @@ class _InventoryDesktopState extends State<InventoryDesktop> {
                                 );
                               }).toList(),
                               onChanged: (value) {
+                                if(value== null)return;
+
                                 setState(() {
-                                  selectedCategory = value!;
+                                  selectedCategory = value;
                                 });
+                                filterByCategory(value);
                               },
                             ),
                           ),

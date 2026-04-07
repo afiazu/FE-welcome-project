@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:welcome_project_fe/model/inventory.dart';
+import 'package:welcome_project_fe/api_service.dart';
+
 
 class InventoryMobile extends StatefulWidget {
   const InventoryMobile({super.key});
@@ -10,40 +12,50 @@ class InventoryMobile extends StatefulWidget {
 }
 
 class _InventoryMobileState extends State<InventoryMobile> {
-  List<Inventory> items = [
-    Inventory(
-      id: 101,
-      name: 'Laptop - Dell XPS 15',
-      description: 'High-performance business laptop',
-      quantity: 45,
-      status: 'Active',
-      location: 'Warehouse A',
-    ),
-    Inventory(
-      id: 102,
-      name: 'Ergonomic Office Chair',
-      description: 'Adjustable chair with lumbar support',
-      quantity: 120,
-      status: 'Active',
-      location: 'Warehouse B',
-    ),
-    Inventory(
-      id: 103,
-      name: 'Wireless Mouse - Logitech',
-      description: '2.4GHz wireless optical mouse',
-      quantity: 0,
-      status: 'Discontinued',
-      location: 'Warehouse A',
-    ),
-    Inventory(
-      id: 104,
-      name: '27-inch 4K Monitor',
-      description: 'Ultra HD display monitor',
-      quantity: 32,
-      status: 'Active',
-      location: 'Warehouse C',
-    ),
-  ];
+  List<Inventory> items = [];
+
+    @override
+    void initState() {
+    super.initState();
+    loadInventory();
+}
+
+  Future<void> loadInventory() async {
+  try {
+    final data = await ApiService.getAllInventoryItems();
+
+    setState(() {
+      items = data
+          .map((item) => Inventory.fromJson(item))
+          .toList();
+    });
+        print('items length: ${items.length}');
+
+  } catch (e) {
+    print(e);
+  }
+}
+
+  Future<void> searchInventory(String name) async {
+    try {
+      if (name.isEmpty) {
+        loadInventory();
+        return;
+      }
+
+      final data = await ApiService.searchInventoryByName(name);
+
+      setState(() {
+        items = data
+            .map((item) => Inventory.fromJson(item))
+            .toList();
+      });
+
+      print('search items length: ${items.length}');
+    } catch (e) {
+      print('searchInventory error: $e');
+    }
+  }
 
   String selectedCategory = 'All Categories';
 
@@ -63,6 +75,8 @@ class _InventoryMobileState extends State<InventoryMobile> {
 
   int get archivedItems =>
       items.where((item) => item.status == 'Archived').length;
+
+  TextEditingController searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +109,11 @@ class _InventoryMobileState extends State<InventoryMobile> {
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const TextField(
+                child:  TextField(
+                          controller:searchController,
+                          onChanged: (value){
+                          searchInventory(value);
+                          },
                   decoration: InputDecoration(
                     hintText: 'Search inventory...',
                     prefixIcon: Icon(Icons.search),
