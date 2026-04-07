@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:welcome_project_fe/view/screens/dashboard.dart';
 import 'router.dart';
+
 
 void main() {
   initializeGoRouter(); 
@@ -11,9 +13,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    /*
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       routerConfig: router, 
+      title: 'UBTS',
+      
+    );
+    */
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'try dashboard',
+      theme: ThemeData(),
+      home: DashboardScreen(),
     );
   }
 }
