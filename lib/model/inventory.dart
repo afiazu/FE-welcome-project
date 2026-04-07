@@ -14,4 +14,16 @@ class Inventory {
     required this.status,
     required this.location,
   });
+
+  factory Inventory.fromJson(Map<String, dynamic> json) {
+    return Inventory(
+      id: json['inventory_id'],
+      name: json['inventory_name'],
+      description: json['inventory_description'] ?? '',
+      quantity: json['inventory_quantity'],
+      status: json['inventory_status'],
+      location: json['inventory_location'] ?? '',
+    );
+  }
+
 }

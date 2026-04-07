@@ -4,6 +4,7 @@ class DashboardBox extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
+  final iconColor;
   final VoidCallback? onTap;
   
   const DashboardBox({
@@ -11,6 +12,7 @@ class DashboardBox extends StatelessWidget {
     required this.title,
     required this.value,
     required this.icon,
+    required this.iconColor,
     this.onTap,
   });
 
@@ -34,6 +36,7 @@ class DashboardBox extends StatelessWidget {
               children: [
                 Icon(
                   icon,
+                  color: iconColor,
                   size: 32,
                 ),
                 const SizedBox(height: 8),
