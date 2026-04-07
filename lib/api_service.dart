@@ -29,4 +29,76 @@ class ApiService {
       throw Exception('Error connecting to backend: $e');
     }
   }
+
+
+ static Future<List<dynamic>> getAllInventoryItems() async {
+    final url = Uri.parse('$_baseUrl/inventory');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body); // returns List
+      } else {
+        throw Exception('Failed to fetch inventory: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching inventory: $e');
+    }
+  }
+
+
+  
+ static Future<List<dynamic>> getInventoryByCategoryID(int categoryId) async {
+    final url = Uri.parse('$_baseUrl/inventory/category/$categoryId');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body); // returns List
+      } else {
+        throw Exception('Failed to fetch inventory: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching inventory: $e');
+    }
+  }
+
+
+        static Future<List<dynamic>> searchInventoryByName(String name) async {
+        final url = Uri.parse(
+           '$_baseUrl/inventory/search?name=${Uri.encodeComponent(name)}'
+          );
+
+        try {
+          final response = await http.get(url);
+
+          if (response.statusCode == 200) {
+            return jsonDecode(response.body); // returns List
+          } else {
+            throw Exception('Failed to fetch inventory: ${response.statusCode}');
+          }
+        } catch (e) {
+          throw Exception('Error fetching inventory: $e');
+        }
+      }
+
+ static Future<List<dynamic>> getAllCategories() async {
+    final url = Uri.parse('$_baseUrl/categories');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body); // returns List
+      } else {
+        throw Exception('Failed to fetch inventory: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching inventory: $e');
+    }
+  }
+
+
 }
