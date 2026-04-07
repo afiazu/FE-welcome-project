@@ -5,8 +5,16 @@ import 'package:welcome_project_fe/util/ImageConstants.dart';
 import 'package:welcome_project_fe/util/IconConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  
+  bool rememberMe = false;
 
   @override
   Widget build(BuildContext context) {
@@ -27,83 +35,184 @@ class LoginScreen extends StatelessWidget {
         ),
         child: SafeArea(
           child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            // child: SingleChildScrollView(
+            //   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            //   child: Column(
+            //     mainAxisSize: MainAxisSize.min,
+            //     crossAxisAlignment: CrossAxisAlignment.center,
+            //     children: [
+            //       // UBTS Logo
+            //       Image.asset(
+            //         ImageConstants.UBTSlogo,
+            //         height: 140,
+            //       ),
+
+            //       const SizedBox(height: 40),
+
+            //       // Welcome Title
+            //       const Text(
+            //         'Welcome',
+            //         style: TextStyle(
+            //           fontSize: 32,
+            //           fontWeight: FontWeight.bold,
+            //           color: Colors.white,
+            //         ),
+            //         textAlign: TextAlign.center,
+            //       ),
+
+            //       const SizedBox(height: 12),
+
+            //       // Subtitle
+            //       Text(
+            //         'Manage your tasks and workflow efficiently.',
+            //         style: TextStyle(
+            //           fontSize: 16,
+            //           color: Colors.white.withOpacity(0.9),
+            //         ),
+            //         textAlign: TextAlign.center,
+            //       ),
+
+            //       const SizedBox(height: 40),
+            //     ],
+            //   ),
+            // ),
+
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // UBTS Logo
+
                   Image.asset(
                     ImageConstants.UBTSlogo,
-                    height: 140,
+                    height: 120,
                   ),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 25),
 
-                  // Welcome Title
-                  const Text(
-                    'Welcome',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Subtitle
-                  Text(
-                    'Manage your tasks and workflow efficiently.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Gradient Button
-                  Container(
-                    width: 200,
-                    height : 50,
-                    decoration: BoxDecoration(
-                      color : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () async {
-                          try {
-                            final result = await ApiService.healthCheck();
-                            print('Backend response: $result');
-                          } catch (e) {
-                            print('Error: $e');
-                          }
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 15, horizontal: 15),
-                          child: Center(
-                            child: Text(
-                              'Check Backend',
-                              style: TextStyle(
-                                color: ColorConstants.ubtsBlue,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                  // Box Container
+                  SizedBox(
+                    width: 600,
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          )
+                        ],
+                      ),
+                    
+                      child: Column(
+                        children: [
+                    
+                          const Text(
+                            'Sign In',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                    
+                          const SizedBox(height: 20),
+                    
+                          // username
+                          TextField(
+                            decoration: InputDecoration(
+                              labelText: 'Username',
+                              prefixIcon: Icon(Icons.person),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                           ),
-                        ),
+                    
+                          const SizedBox(height: 16),
+                    
+                          // password
+                          TextField(
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: Icon(Icons.lock),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                    
+                          const SizedBox(height: 5.0),
+                    
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: rememberMe,
+                                onChanged: (value) {
+                                  setState(() {
+                                    rememberMe = value ?? false;
+                                  });
+                                },
+                              ),
+                              const Text('Remember me'),
+                            ],
+                          ),
+                    
+                          const SizedBox(height: 10.0),
+                    
+                          // login
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: () {
+                    
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: ColorConstants.ubtsBlue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Login',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                    
+                          const SizedBox(height: 12),
+                    
+                          TextButton(
+                            onPressed: () {
+
+                            },
+                            child: const Text('Forgot password?'),
+                          ),
+                          
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            
+                            children: [
+                              const Text('Don\'t have an account?'),
+                              TextButton(
+                                onPressed: () {
+
+                                },
+                                child: const Text('Sign Up'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 16),
                 ],
               ),
             ),
