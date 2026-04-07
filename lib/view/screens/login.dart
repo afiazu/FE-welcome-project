@@ -4,6 +4,9 @@ import 'package:welcome_project_fe/api_service.dart';
 import 'package:welcome_project_fe/util/ImageConstants.dart';
 import 'package:welcome_project_fe/util/IconConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,6 +18,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   
   bool rememberMe = false;
+
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -35,48 +41,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: SafeArea(
           child: Center(
-            // child: SingleChildScrollView(
-            //   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-            //   child: Column(
-            //     mainAxisSize: MainAxisSize.min,
-            //     crossAxisAlignment: CrossAxisAlignment.center,
-            //     children: [
-            //       // UBTS Logo
-            //       Image.asset(
-            //         ImageConstants.UBTSlogo,
-            //         height: 140,
-            //       ),
-
-            //       const SizedBox(height: 40),
-
-            //       // Welcome Title
-            //       const Text(
-            //         'Welcome',
-            //         style: TextStyle(
-            //           fontSize: 32,
-            //           fontWeight: FontWeight.bold,
-            //           color: Colors.white,
-            //         ),
-            //         textAlign: TextAlign.center,
-            //       ),
-
-            //       const SizedBox(height: 12),
-
-            //       // Subtitle
-            //       Text(
-            //         'Manage your tasks and workflow efficiently.',
-            //         style: TextStyle(
-            //           fontSize: 16,
-            //           color: Colors.white.withOpacity(0.9),
-            //         ),
-            //         textAlign: TextAlign.center,
-            //       ),
-
-            //       const SizedBox(height: 40),
-            //     ],
-            //   ),
-            // ),
-
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -118,9 +82,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                     
                           const SizedBox(height: 20),
-                    
-                          // username
+                
                           TextField(
+                            controller: usernameController,
                             decoration: InputDecoration(
                               labelText: 'Username',
                               prefixIcon: Icon(Icons.person),
@@ -129,11 +93,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-                    
-                          const SizedBox(height: 16),
-                    
+
+                          const SizedBox(height: 16), 
+
                           // password
                           TextField(
+                            controller: passwordController,
                             obscureText: true,
                             decoration: InputDecoration(
                               labelText: 'Password',
@@ -143,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-                    
+              
                           const SizedBox(height: 5.0),
                     
                           Row(
@@ -167,8 +132,37 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: double.infinity,
                             height: 48,
                             child: ElevatedButton(
-                              onPressed: () {
-                    
+                              onPressed: () async {
+                                try {
+                                  final response = await ApiService.login(
+                                    usernameController.text, 
+                                    passwordController.text
+                                  );
+
+                                final userId = response['user_id'];
+
+                                final preferences = await SharedPreferences.getInstance();
+                                await preferences.setInt('user_id', userId);
+
+                                context.go('/dashboard', extra: userId);
+                                
+                                } catch (e) {
+                                  // error
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    new SnackBar(
+                                      content: Text('Login failed'),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      margin: EdgeInsets.only(
+                                          bottom: MediaQuery.of(context).size.height - 100,
+                                          right: 20,
+                                          left: 20
+                                        ),
+                                    )
+                                  );
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: ColorConstants.ubtsBlue,

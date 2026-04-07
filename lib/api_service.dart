@@ -129,6 +129,29 @@ class ApiService {
     }
   }
 
+  //Login User API
+  static Future<Map<String, dynamic>> login(String username, String password) async {
+    final url = Uri.parse('$_baseUrl/users');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': username, 
+          'password': password
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Login failed: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error during login: $e');
+    }
+  }
 
         static Future<List<dynamic>> searchInventoryByName(String name) async {
         final url = Uri.parse(
