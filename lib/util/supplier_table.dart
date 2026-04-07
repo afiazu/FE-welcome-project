@@ -52,7 +52,7 @@ class SupplierTable extends StatelessWidget {
                       DataCell(Text(supplier.name)),
                       DataCell(Text(supplier.phone)),
                       DataCell(Text(supplier.email)),
-                      DataCell(Text(supplier.address, overflow: TextOverflow.ellipsis)),
+                      DataCell(Text(supplier.address)),
                       DataCell(Text(supplier.createdAt)),
                     ],
                   )).toList(),
