@@ -6,6 +6,7 @@ import 'package:welcome_project_fe/util/IconConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:welcome_project_fe/util/snackbar.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -32,8 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.lightBlue,
-              Colors.lightGreen
+              Colors.white,
+              Colors.grey
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -148,20 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 
                                 } catch (e) {
                                   // error
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    new SnackBar(
-                                      content: Text('Login failed'),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(24),
-                                      ),
-                                      margin: EdgeInsets.only(
-                                          bottom: MediaQuery.of(context).size.height - 100,
-                                          right: 20,
-                                          left: 20
-                                        ),
-                                    )
-                                  );
+                                  showRightSnackbar(context, 'Login Failed', isError: true);
                                 }
                               },
                               style: ElevatedButton.styleFrom(
