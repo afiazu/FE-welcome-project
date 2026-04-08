@@ -15,7 +15,6 @@ class UserModel {
     required this.updatedAt,
   });
 
-  // This factory turns your Postman JSON into a UserModel object
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       userId: json['user_id'] ?? json['id'] ?? 0,

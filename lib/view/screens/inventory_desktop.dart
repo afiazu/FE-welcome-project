@@ -364,7 +364,9 @@ List<String> categories = ['All Categories'];
                                               children: [
                                                 ElevatedButton(
                                                   onPressed: () {
-                                                    print("View ${item.name}"); //view button
+                                                    showDialog(context: context, 
+                                                    builder: (context) => InventoryDetailsPopup(item: item)
+                                                    );
                                                   },
                                                   child: const Text("View"),
                                                 ),
@@ -407,6 +409,72 @@ List<String> categories = ['All Categories'];
             Text(value, style: const TextStyle(fontSize: 22)),
             const SizedBox(height: 4),
             Text(title, style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+class InventoryDetailsPopup extends StatelessWidget {
+  final Inventory item;
+
+  const InventoryDetailsPopup({
+    super.key,
+    required this.item,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        width: 400,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              item.name,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text("Description: ${item.description}"),
+            const SizedBox(height: 8),
+            Text("Quantity: ${item.quantity}"),
+            const SizedBox(height: 8),
+            Text("Status: ${item.status}"),
+            const SizedBox(height: 8),
+            Text("Created At: ${item.createdAt.toLocal().toString().split('.')[0]}",),            
+            const SizedBox(height: 8),
+            Text("Updated At: ${item.updatedAt.toLocal().toString().split('.')[0]}",),
+            const SizedBox(height: 8),
+        
+            if (item.deletedAt != null)
+            Text("Deleted At: ${item.deletedAt!.toLocal().toString().split('.')[0]}",),
+            const SizedBox(height: 8),
+
+            Text("Location: ${item.location}"),
+            const SizedBox(height: 8),
+
+
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text("Close"),
+              ),
+            ),
           ],
         ),
       ),
