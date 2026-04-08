@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:welcome_project_fe/model/inventory.dart';
 import 'package:welcome_project_fe/api_service.dart';
-
+import 'package:welcome_project_fe/util/MobileSideBar.dart';
 
 class InventoryMobile extends StatefulWidget {
   const InventoryMobile({super.key});
@@ -130,6 +130,15 @@ List<String> categories = ['All Categories'];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: ColorConstants.ubtsBlue,
+        elevation: 0,
+        title: const Text(
+          'Inventory Management',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+      drawer: const Mobilesidebar(),
       backgroundColor: Colors.grey[100],
       body: SafeArea(
         child: Padding(
