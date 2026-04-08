@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:welcome_project_fe/model/user.dart';
 import 'package:welcome_project_fe/util/ImageConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:welcome_project_fe/api_service.dart';
 import 'package:welcome_project_fe/util/snackbar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -17,7 +19,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   bool isEditingPassword = false;
   bool isLoading = false;
 
-  final int userId = 1; // Example user ID, replace with actual user ID from auth context
+  String? userId;
   UserModel? currentUser;
 
   final TextEditingController usernameController = TextEditingController();
@@ -43,28 +45,44 @@ class ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> loadUserData() async {
+  setState(() => isLoading = true);
+
+  try {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    
+    // DEBUG: Let's see what is actually there
+    final int? storedId = prefs.getInt('user_id');
+    debugPrint("DEBUG: Retrieved ID from Prefs: $storedId");
+
+    if (storedId == null) {
+      debugPrint("No user ID found. Check if Login saves 'user_id'");
+      setState(() => isLoading = false);
+      return; 
+    }
+
+    // Ensure the class variable is updated
     setState(() {
-      isLoading = true;
+      userId = storedId.toString(); 
     });
 
-    try {
-      UserModel user = await ApiService.getUserById(userId.toString());
+    UserModel user = await ApiService.getUserById(storedId.toString());
 
-      setState(() {
-        currentUser = user;
-        usernameController.text = user.username;
-        emailController.text = user.userEmail;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() => isLoading = false);
-    }
+    setState(() {
+      currentUser = user;
+      usernameController.text = user.username;
+      emailController.text = user.userEmail;
+      isLoading = false;
+    });
+  } catch (e) {
+    debugPrint("API Error: $e");
+    setState(() => isLoading = false);
   }
+}
 
   Future<void> saveProfileChanges() async {
     try {
       await ApiService.updateUserInfo(
-        userId.toString(),
+        userId!,
         usernameController.text.trim(),
         emailController.text.trim(),
       );
@@ -100,7 +118,7 @@ class ProfileScreenState extends State<ProfileScreen> {
 
     try {
       await ApiService.updateUserPassword(
-        userId.toString(),
+        userId!,
         currentPass,
         newPass,
       );
@@ -212,7 +230,12 @@ class ProfileScreenState extends State<ProfileScreen> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  SharedPreferences.getInstance().then((prefs) {
+                    prefs.remove('user_id');
+                  });
+                  context.go('/login');
+                },
                 icon: const Icon(Icons.logout, color: Colors.red),
                 label: const Text(
                   'Logout',
