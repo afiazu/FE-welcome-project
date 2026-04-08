@@ -160,6 +160,7 @@ List<String> categories = ['All Categories'];
                       Row(
                         children: [
                           Expanded(
+                            flex: 3,
                             child: Container(
                               height: 50,
                               decoration: BoxDecoration(
@@ -176,6 +177,8 @@ List<String> categories = ['All Categories'];
                                   hintText: 'Search inventory...',
                                   prefixIcon: Icon(Icons.search),
                                   border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(vertical: 16)
                                 ),
                               ),
                             ),
@@ -261,7 +264,7 @@ List<String> categories = ['All Categories'];
                                 child: const Row(
                                   children: [
                                     Expanded(
-                                      flex: 3,
+                                      flex: 1,
                                       child: Text(
                                         "Name",
                                         style: TextStyle(
@@ -283,7 +286,7 @@ List<String> categories = ['All Categories'];
                                       ),
                                     ),
                                     Expanded(
-                                      flex: 2,
+                                      flex: 1,
                                       child: Text(
                                         "Status",
                                         style: TextStyle(
@@ -293,7 +296,7 @@ List<String> categories = ['All Categories'];
                                       ),
                                     ),
                                     Expanded(
-                                      flex: 2,
+                                      flex: 1,
                                       child: Text(
                                         "Location",
                                         style: TextStyle(
@@ -303,7 +306,7 @@ List<String> categories = ['All Categories'];
                                       ),
                                     ),
                                     Expanded(
-                                      flex: 3,
+                                      flex: 1,
                                       child: Text(
                                         "Action",
                                         style: TextStyle(
@@ -339,7 +342,7 @@ List<String> categories = ['All Categories'];
                                       child: Row(
                                         children: [
                                           Expanded(
-                                            flex: 3,
+                                            flex: 1,
                                             child: Text(item.name),
                                           ),
                                           Expanded(
@@ -351,15 +354,15 @@ List<String> categories = ['All Categories'];
                                             ),
                                           ),
                                           Expanded(
-                                            flex: 2,
+                                            flex: 1,
                                             child: Text(item.status),
                                           ),
                                           Expanded(
-                                            flex: 2,
+                                            flex: 1,
                                             child: Text(item.location),
                                           ),
                                           Expanded(
-                                            flex: 3,
+                                            flex: 1,
                                             child: Row(
                                               children: [
                                                 ElevatedButton(

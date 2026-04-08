@@ -167,6 +167,8 @@ List<String> categories = ['All Categories'];
                     hintText: 'Search inventory...',
                     prefixIcon: Icon(Icons.search),
                     border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 16)
                   ),
                 ),
               ),
