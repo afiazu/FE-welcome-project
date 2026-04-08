@@ -18,6 +18,8 @@ class _InventoryMobileState extends State<InventoryMobile> {
     void initState() {
     super.initState();
     loadInventory();
+    loadCategories();
+
 }
 
   Future<void> loadInventory() async {
@@ -35,6 +37,25 @@ class _InventoryMobileState extends State<InventoryMobile> {
     print(e);
   }
 }
+
+
+Future<void> loadCategories() async {
+  try {
+    final data = await ApiService.getAllCategories();
+
+    setState(() {
+      categories = [
+        'All Categories',
+        ...data.map((item) => item['category_name'].toString()),
+      ];
+    });
+
+    print('categories length: ${categories.length}');
+  } catch (e) {
+    print('loadCategories error: $e');
+  }
+}
+
 
   Future<void> searchInventory(String name) async {
     try {
@@ -57,13 +78,41 @@ class _InventoryMobileState extends State<InventoryMobile> {
     }
   }
 
-  String selectedCategory = 'All Categories';
 
-  final List<String> categories = [
-    'All Categories',
-    'Electronics',
-    'Furniture',
-  ];
+  Future<void> filterByCategory(String categoryName) async {
+  try {
+    if (categoryName == 'All Categories') {
+      loadInventory();
+      return;
+    }
+
+    final data = await ApiService.getAllCategories();
+
+    final selected = data.firstWhere(
+      (item) => item['category_name'] == categoryName,
+    );
+
+    final int categoryId = selected['category_id'];
+
+    final inventoryData =
+        await ApiService.getInventoryByCategoryID(categoryId);
+
+    setState(() {
+      items = inventoryData
+          .map((item) => Inventory.fromJson(item))
+          .toList();
+    });
+
+    print('filtered items length: ${items.length}');
+  } catch (e) {
+    print('filterByCategory error: $e');
+  }
+}
+
+
+String selectedCategory = 'All Categories';
+
+List<String> categories = ['All Categories'];
 
   int get totalItems => items.length;
 
@@ -142,10 +191,13 @@ class _InventoryMobileState extends State<InventoryMobile> {
                     );
                   }).toList(),
                   onChanged: (value) {
-                    setState(() {
-                      selectedCategory = value!;
+                    if(value== null)return;
+
+                      setState(() {
+                      selectedCategory = value;
                     });
-                  },
+                    filterByCategory(value);
+                    },
                 ),
               ),
 
@@ -219,7 +271,9 @@ class _InventoryMobileState extends State<InventoryMobile> {
                           //view button
                           ElevatedButton(
                             onPressed: () {
-                              print("View ${item.name}");
+                              showDialog(context: context, 
+                              builder: (context) => InventoryDetailsPopup(item: item)
+                              );
                             },
                             child: const Text('View'),
                           ),
@@ -251,6 +305,71 @@ class _InventoryMobileState extends State<InventoryMobile> {
             Text(value, style: const TextStyle(fontSize: 20)),
             const SizedBox(height: 4),
             Text(title, style: TextStyle(color: Colors.grey[700])),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class InventoryDetailsPopup extends StatelessWidget {
+  final Inventory item;
+
+  const InventoryDetailsPopup({
+    super.key,
+    required this.item,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        width: 400,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              item.name,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text("Description: ${item.description}"),
+            const SizedBox(height: 8),
+            Text("Quantity: ${item.quantity}"),
+            const SizedBox(height: 8),
+            Text("Status: ${item.status}"),
+            const SizedBox(height: 8),
+            Text("Created At: ${item.createdAt.toLocal().toString().split('.')[0]}",),            
+            const SizedBox(height: 8),
+            Text("Updated At: ${item.updatedAt.toLocal().toString().split('.')[0]}",),
+            const SizedBox(height: 8),
+        
+            if (item.deletedAt != null)
+            Text("Deleted At: ${item.deletedAt!.toLocal().toString().split('.')[0]}",),
+            const SizedBox(height: 8),
+
+            Text("Location: ${item.location}"),
+            const SizedBox(height: 8),
+
+
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text("Close"),
+              ),
+            ),
           ],
         ),
       ),
