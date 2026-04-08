@@ -6,9 +6,12 @@ import '../../util/dashboardBox.dart';
 import '../../util/supplier_carousel.dart';
 import '../../util/info_panels.dart';
 import '../../model/supplier.dart';
+import '../../api_service.dart'; 
+import 'package:welcome_project_fe/util/MobileSideBar.dart';
+import 'package:welcome_project_fe/util/DesktopSideBar.dart';
+
 import '../../model/low_stock_item.dart';
 import '../../model/category.dart';
-import '../../api_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, this.userId});
@@ -129,104 +132,74 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await _fetchCategories();
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 800;
-    
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isDesktop = screenWidth >= 800; // Standard desktop threshold
+    final bool isMobile = screenWidth < 600;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                color: Colors.grey[100], 
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
+      appBar: AppBar(
+        backgroundColor: ColorConstants.ubtsBlue,
+        automaticallyImplyLeading: !isDesktop,
+        elevation: 0,
+        title: const Text(
+          'User Dashboard',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+      drawer: isDesktop ? null : const Mobilesidebar(),
+      body: Stack(
+        children: [
+          // Main 
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.only(left: isDesktop ? 70 : 0),
+              child: RefreshIndicator(
+                onRefresh: _refreshData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Dashboard Overview',
-                        style: TextStyle(
-                          fontSize: isMobile ? 24 : 28,
-                          fontWeight: FontWeight.bold,
-                          color: ColorConstants.ubtsBlue,
-                        ),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: _isLoadingUser
+                            ? const LinearProgressIndicator()
+                            : WelcomeSection(userName: _username),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Track your inventory and supplier metrics',
-                        style: TextStyle(
-                          fontSize: isMobile ? 12 : 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
+                      
+                      const SizedBox(height: 20),
+
+                      _isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : (isMobile
+                              ? _buildMobileDashboardBoxes()
+                              : _buildDesktopDashboardBoxes()),
+
+                      const SizedBox(height: 30),
+
+                      isMobile ? _buildMobileLayout() : _buildDesktopLayout(),
+                      
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),
               ),
-              
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      spreadRadius: 1,
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _isLoadingUser
-                            ? const SizedBox(
-                                height: 50,
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            : WelcomeSection(userName: _username),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // Responsive Dashboard Boxes - 2x2 on mobile, 1x4 on desktop
-                    _isLoading 
-                      ? const Center(child: CircularProgressIndicator())
-                      : isMobile 
-                          ? _buildMobileDashboardBoxes()
-                          : _buildDesktopDashboardBoxes(),
-
-                    const SizedBox(height: 30),
-
-                    // Responsive layout for Supplier Carousel and Right Panel
-                    isMobile
-                        ? _buildMobileLayout()
-                        : _buildDesktopLayout(),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+
+          // Desktop Sidebar
+          if (isDesktop)
+            const Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Desktopsidebar(),
+            ),
+        ],
       ),
     );
   }
