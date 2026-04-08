@@ -5,6 +5,9 @@ import '../../util/dashboardBox.dart';
 import '../../util/supplier_carousel.dart';
 import '../../model/supplier.dart';
 import '../../api_service.dart'; 
+import 'package:welcome_project_fe/util/MobileSideBar.dart';
+import 'package:welcome_project_fe/util/DesktopSideBar.dart';
+
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -60,53 +63,76 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await _fetchData();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: ColorConstants.ubtsBlue,
-        title: Text(
-          'User Dashboard',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+@override
+Widget build(BuildContext context) {
+  bool isDesktop = MediaQuery.of(context).size.width >= 500;
+
+  return Scaffold(
+    appBar: AppBar(
+      backgroundColor: ColorConstants.ubtsBlue,
+      automaticallyImplyLeading: !isDesktop,
+      title: const Text(
+        'User Dashboard',
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              const WelcomeSection(),
-              const SizedBox(height: 30),
+    ),
+    
 
-              // Show loading indicator or dashboard boxes
-              _isLoading 
-                ? const Center(child: CircularProgressIndicator())
-                : _buildDashboardBoxes(),
+    drawer: isDesktop ? null : const Mobilesidebar(),
+      body: Stack(
+        children: [
+          // Main Content
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.only(left: isDesktop ? 70 : 0),
+              child: RefreshIndicator(
+                onRefresh: _refreshData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const WelcomeSection(),
+                      const SizedBox(height: 30),
 
-              const SizedBox(height: 30),
+                      _isLoading 
+                        ? const Center(child: CircularProgressIndicator())
+                        : _buildDashboardBoxes(),
 
-              SizedBox(
-                height: 260,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildSupplierSection(),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildRightPanel(),
-                    ),
-                  ],
+                      const SizedBox(height: 30),
+
+                      SizedBox(
+                        height: 260,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildSupplierSection(),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildRightPanel(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+
+          if (isDesktop)
+            const Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Desktopsidebar(), 
+            ),
+        ],
       ),
-    );
-  }
+  );
+}
 
   Widget _buildDashboardBoxes() {
     return Row(
