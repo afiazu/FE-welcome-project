@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:welcome_project_fe/model/user.dart';
 import '../model/supplier.dart';
 import '../model/low_stock_item.dart';
+import 'model/category.dart';
 
 class ApiService {
   static const String _baseUrl = 'http://localhost:3000';
@@ -74,6 +75,7 @@ class ApiService {
         return [];
       }
     } catch (e) {
+      print('Error fetching low stock items: $e');
       return [];
     }
   }
@@ -132,6 +134,28 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error fetching categories: $e');
+    }
+  }
+
+  static Future<List<Category>> fetchCategories() async {
+    final url = Uri.parse('$_baseUrl/categories');
+    print('Fetching categories from: $url');
+    
+    try {
+      final response = await http.get(url);
+      print('Response status: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        List<dynamic> body = jsonDecode(response.body);
+        print('Found ${body.length} categories');
+        return body.map((json) => Category.fromJson(json)).toList();
+      } else {
+        print('Failed to fetch categories');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching categories: $e');
+      return [];
     }
   }
 
@@ -224,5 +248,20 @@ class ApiService {
     }
   }
 
+  static Future<List<LowStockItem>> getDiscontinuedItems() async {
+    final url = Uri.parse('$_baseUrl/inventory/discontinued');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        List<dynamic> body = jsonDecode(response.body);
+        return body.map((json) => LowStockItem.fromJson(json)).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching discontinued items: $e');
+      return [];
+    }
+  }
   
 }

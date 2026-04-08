@@ -4,8 +4,11 @@ import 'package:welcome_project_fe/view/screens/inventory.dart';
 import '../../util/welcomeSection.dart';
 import '../../util/dashboardBox.dart';
 import '../../util/supplier_carousel.dart';
+import '../../util/info_panels.dart';
 import '../../model/supplier.dart';
-import '../../api_service.dart'; 
+import '../../model/low_stock_item.dart';
+import '../../model/category.dart';
+import '../../api_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, this.userId});
@@ -24,12 +27,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   
   List<Supplier> _suppliers = [];
   Map<String, dynamic> _dashboardStats = {};
+  List<LowStockItem> _lowStockItems = [];
+  List<LowStockItem> _discontinuedItems = [];
+  List<Category> _categories = [];
 
   @override
   void initState() {
     super.initState();
     _fetchData();
     _fetchUsername();
+    _fetchLowStockItems();
+    _fetchDiscontinuedItems();
+    _fetchCategories();
   }
 
   Future<void> _fetchUsername() async {
@@ -51,6 +60,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         _isLoadingUser = false;
       });
+    }
+  }
+
+  Future<void> _fetchLowStockItems() async {
+    try {
+      final items = await ApiService.getLowStockItems();
+      setState(() {
+        _lowStockItems = items;
+      });
+    } catch (e) {
+      print('Error fetching low stock items: $e');
+    }
+  }
+
+  Future<void> _fetchDiscontinuedItems() async {
+    try {
+      final items = await ApiService.getDiscontinuedItems();
+      setState(() {
+        _discontinuedItems = items;
+      });
+    } catch (e) {
+      print('Error fetching discontinued items: $e');
+    }
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final categories = await ApiService.fetchCategories();
+      setState(() {
+        _categories = categories;
+      });
+    } catch (e) {
+      print('Error fetching categories: $e');
     }
   }
 
@@ -82,54 +124,104 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _refreshData() async {
     await _fetchData();
     await _fetchUsername();
+    await _fetchLowStockItems();
+    await _fetchDiscontinuedItems();
+    await _fetchCategories();
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 800;
+    
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: ColorConstants.ubtsBlue,
-        title: Text(
-          'User Dashboard',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
+      backgroundColor: Colors.white,
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Show loading indicator while fetching username
-              _isLoadingUser
-                  ? const SizedBox(
-                      height: 50,
-                      child: Center(
-                        child: CircularProgressIndicator(),
+              Container(
+                width: double.infinity,
+                color: Colors.grey[100], 
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Dashboard Overview',
+                        style: TextStyle(
+                          fontSize: isMobile ? 24 : 28,
+                          fontWeight: FontWeight.bold,
+                          color: ColorConstants.ubtsBlue,
+                        ),
                       ),
-                    )
-                  : WelcomeSection(userName: _username),
-              const SizedBox(height: 30),
-
-              // Show loading indicator or dashboard boxes
-              _isLoading 
-                ? const Center(child: CircularProgressIndicator())
-                : _buildDashboardBoxes(),
-
-              const SizedBox(height: 30),
-
-              SizedBox(
-                height: 260,
-                child: Row(
+                      const SizedBox(height: 8),
+                      Text(
+                        'Track your inventory and supplier metrics',
+                        style: TextStyle(
+                          fontSize: isMobile ? 12 : 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _isLoadingUser
+                            ? const SizedBox(
+                                height: 50,
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              )
+                            : WelcomeSection(userName: _username),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
                   children: [
-                    Expanded(
-                      child: _buildSupplierSection(),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildRightPanel(),
-                    ),
+                    // Responsive Dashboard Boxes - 2x2 on mobile, 1x4 on desktop
+                    _isLoading 
+                      ? const Center(child: CircularProgressIndicator())
+                      : isMobile 
+                          ? _buildMobileDashboardBoxes()
+                          : _buildDesktopDashboardBoxes(),
+
+                    const SizedBox(height: 30),
+
+                    // Responsive layout for Supplier Carousel and Right Panel
+                    isMobile
+                        ? _buildMobileLayout()
+                        : _buildDesktopLayout(),
                   ],
                 ),
               ),
@@ -140,7 +232,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildDashboardBoxes() {
+  // Desktop: 4 boxes in a row
+  Widget _buildDesktopDashboardBoxes() {
     return Row(
       children: [
         DashboardBox(
@@ -157,24 +250,108 @@ class _DashboardScreenState extends State<DashboardScreen> {
           title: 'Low Stock',
           value: _dashboardStats['lowStock']?.toString() ?? '0',
           icon: Icons.warning,
-          iconColor: Colors.green,
+          iconColor: Colors.orange,
           onTap: () => _updatePanel('Low Stock'),
         ),
         const SizedBox(width: 12),
         DashboardBox(
-          title: 'Checked Out',
-          value: _dashboardStats['checkedOut']?.toString() ?? '0',
-          icon: Icons.exit_to_app,
-          iconColor: Colors.yellow,
-          onTap: () => _updatePanel('Checked Out'),
+          title: 'Discontinued',
+          value: _discontinuedItems.length.toString(),
+          icon: Icons.cancel,
+          iconColor: Colors.red,
+          onTap: () => _updatePanel('Discontinued'),
         ),
         const SizedBox(width: 12),
         DashboardBox(
           title: 'Categories',
           value: _dashboardStats['categories']?.toString() ?? '0',
           icon: Icons.category,
-          iconColor: Colors.red,
+          iconColor: Colors.purple,
           onTap: () => _updatePanel('Categories'),
+        ),
+      ],
+    );
+  }
+
+  // Mobile: 2x2 grid for boxes
+  Widget _buildMobileDashboardBoxes() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            DashboardBox(
+              title: 'Total Items',
+              value: _dashboardStats['totalItems']?.toString() ?? '0',
+              icon: Icons.inventory,
+              iconColor: Colors.blue,
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen()));
+              },
+            ),
+            const SizedBox(width: 12),
+            DashboardBox(
+              title: 'Low Stock',
+              value: _dashboardStats['lowStock']?.toString() ?? '0',
+              icon: Icons.warning,
+              iconColor: Colors.orange,
+              onTap: () => _updatePanel('Low Stock'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            DashboardBox(
+              title: 'Discontinued',
+              value: _discontinuedItems.length.toString(),
+              icon: Icons.cancel,
+              iconColor: Colors.red,
+              onTap: () => _updatePanel('Discontinued'),
+            ),
+            const SizedBox(width: 12),
+            DashboardBox(
+              title: 'Categories',
+              value: _dashboardStats['categories']?.toString() ?? '0',
+              icon: Icons.category,
+              iconColor: Colors.purple,
+              onTap: () => _updatePanel('Categories'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Desktop: Supplier Carousel on left, Right Panel on right
+  Widget _buildDesktopLayout() {
+    return SizedBox(
+      height: 260,
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildSupplierSection(),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildRightPanel(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Mobile: Supplier Carousel on top, Right Panel below
+  Widget _buildMobileLayout() {
+    return Column(
+      children: [
+        SizedBox(
+          height: 260,
+          child: _buildSupplierSection(),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 260,
+          child: _buildRightPanel(),
         ),
       ],
     );
@@ -223,22 +400,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildRightPanel() {
     switch (selectedCard) {
       case 'Low Stock':
-        return _infoBox(
-          "Low Stock",
-          "${_dashboardStats['lowStock'] ?? 0} items are running low"
-        );
+        return LowStockPanel(lowStockItems: _lowStockItems);
 
-      case 'Checked Out':
-        return _infoBox(
-          "Checked Out",
-          "${_dashboardStats['checkedOut'] ?? 0} items currently borrowed"
-        );
+      case 'Discontinued':
+        return DiscontinuedPanel(discontinuedItems: _discontinuedItems);
 
       case 'Categories':
-        return _infoBox(
-          "Categories",
-          "${_dashboardStats['categories'] ?? 0} categories available"
-        );
+        return CategoriesPanel(categories: _categories);
 
       default:
         return _infoBox(
