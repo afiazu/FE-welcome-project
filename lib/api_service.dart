@@ -76,21 +76,30 @@ class ApiService {
 
   // Get low stock items
   static Future<List<LowStockItem>> getLowStockItems({int threshold = 10}) async {
-    final url = Uri.parse('$_baseUrl/inventory/low-stock?threshold=$threshold');
+  final url = Uri.parse('$_baseUrl/inventory/low-stock?threshold=$threshold');
+  print('📡 Fetching low stock from: $url');
+  
+  try {
+    final response = await http.get(url);
+    print('✅ Response status: ${response.statusCode}');
+    print('📦 Response body: ${response.body}');
     
-    try {
-      final response = await http.get(url);
+    if (response.statusCode == 200) {
+      List<dynamic> body = jsonDecode(response.body);
+      print('📊 Found ${body.length} low stock items');
       
-      if (response.statusCode == 200) {
-        List<dynamic> body = jsonDecode(response.body);
-        return body.map((json) => LowStockItem.fromJson(json)).toList();
-      } else {
-        print('Failed to load low stock items: ${response.statusCode}');
-        return [];
+      if (body.isEmpty) {
+        print('⚠️ No low stock items found in database');
       }
-    } catch (e) {
-      print('Error fetching low stock items: $e');
+      
+      return body.map((json) => LowStockItem.fromJson(json)).toList();
+    } else {
+      print('❌ Failed to load low stock items: ${response.statusCode}');
       return [];
     }
+  } catch (e) {
+    print('❌ Error fetching low stock items: $e');
+    return [];
   }
+}
 }
