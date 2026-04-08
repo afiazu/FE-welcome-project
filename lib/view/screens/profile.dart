@@ -4,6 +4,8 @@ import 'package:welcome_project_fe/model/user.dart';
 import 'package:welcome_project_fe/util/ImageConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:welcome_project_fe/api_service.dart';
+import 'package:welcome_project_fe/util/MobileSideBar.dart';
+import 'package:welcome_project_fe/util/DesktopSideBar.dart';
 import 'package:welcome_project_fe/util/snackbar.dart';
 import 'package:welcome_project_fe/util/profileSectionCard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -131,60 +133,67 @@ class ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+@override
   Widget build(BuildContext context) {
+    bool isDesktop = MediaQuery.of(context).size.width >= 500;
+
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 234, 232, 232),
       appBar: AppBar(
         title: const Text(
           'Profile Settings',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: ColorConstants.ubtsBlue,
+        automaticallyImplyLeading: !isDesktop, 
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                bool isMobile = constraints.maxWidth < 600;
-
-                if (isMobile) {
-                  // mobile view
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        buildLeftCard(context),
-                        const SizedBox(height: 20),
-                        buildRightCard(context),
-                      ],
+      drawer: isDesktop ? null : const Mobilesidebar(),
+      body: Stack(
+        children: [
+          // Main Content
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.only(left: isDesktop ? 70 : 0),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : SingleChildScrollView(
+                      padding: EdgeInsets.all(isDesktop ? 32 : 16),
+                      child: _buildBodyLayout(isDesktop),
                     ),
-                  );
-                } else {
-                  // desktop view
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 1, child: buildLeftCard(context)),
-
-                        const SizedBox(width: 32),
-
-                        Expanded(
-                          flex: 2, // Right side gets more space
-                          child: buildRightCard(context),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              },
             ),
+          ),
+
+          if (isDesktop)
+            const Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Desktopsidebar(),
+            ),
+        ],
+      ),
     );
+  }
+
+  Widget _buildBodyLayout(bool isDesktop) {
+    if (!isDesktop) {
+      return Column(
+        children: [
+          buildLeftCard(context),
+          const SizedBox(height: 20),
+          buildRightCard(context),
+        ],
+      );
+    } else {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(flex: 1, child: buildLeftCard(context)),
+          const SizedBox(width: 32),
+          Expanded(flex: 2, child: buildRightCard(context)),
+        ],
+      );
+    }
   }
 
   // --- UI COMPONENTS ---

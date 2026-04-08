@@ -21,14 +21,5 @@ class MyApp extends StatelessWidget {
       title: 'UBTS',
       
     );
-    
-    /*
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'try dashboard',
-      theme: ThemeData(),
-      home: LoginScreen(),
-    );
-    */
   }
 }
