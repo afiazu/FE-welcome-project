@@ -9,6 +9,7 @@ import '../../model/supplier.dart';
 import '../../api_service.dart'; 
 import 'package:welcome_project_fe/util/MobileSideBar.dart';
 import 'package:welcome_project_fe/util/DesktopSideBar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../model/low_stock_item.dart';
 import '../../model/category.dart';
@@ -45,19 +46,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _fetchUsername() async {
-    if (widget.userId == null) {
-      setState(() {
-        _isLoadingUser = false;
-      });
-      return;
-    }
-    
     try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Try to get username from SharedPreferences first
+      String? savedUsername = prefs.getString('username');
+      
+      if (savedUsername != null) {
+        // Username found in SharedPreferences
+        setState(() {
+          _username = savedUsername;
+          _isLoadingUser = false;
+        });
+        print('Username loaded from SharedPreferences: $_username');
+        return;
+      }
+      
+      // If no username in SharedPreferences, fall back to API call
+      if (widget.userId == null) {
+        setState(() {
+          _isLoadingUser = false;
+        });
+        return;
+      }
+      
+      // Fallback: Fetch from API
       final user = await ApiService.getUserById(widget.userId.toString());
+      
+      // Save to SharedPreferences for next time
+      await prefs.setString('username', user.username);
+      
       setState(() {
         _username = user.username;
         _isLoadingUser = false;
       });
+      
     } catch (e) {
       print('Error fetching username: $e');
       setState(() {
