@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../model/low_stock_item.dart';
-import '../model/category.dart';  // Add this import
+import '../model/category.dart';  
 
 class LowStockPanel extends StatelessWidget {
   final List<LowStockItem> lowStockItems;
@@ -75,7 +75,6 @@ class CategoriesPanel extends StatelessWidget {
   }
 }
 
-// New builder for Category panel (similar to _buildPanel but for Category type)
 Widget _buildCategoryPanel({
   required IconData icon,
   required Color color,
@@ -153,7 +152,6 @@ Widget _buildCategoryPanel({
   );
 }
 
-// Keep your existing helper functions
 Widget _buildEmptyState({
   required IconData icon,
   required Color color,
@@ -204,7 +202,6 @@ Widget _buildPanel({
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(12),
               topRight: Radius.circular(12),
@@ -235,7 +232,7 @@ Widget _buildPanel({
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -261,6 +258,10 @@ Widget _buildPanel({
                     const SizedBox(height: 2),
                     Text(
                       'Location: ${item.location}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    Text(
+                      'Quantity left: ${item.quantity}',
                       style: const TextStyle(fontSize: 12),
                     ),
                   ],

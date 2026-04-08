@@ -12,7 +12,6 @@ import 'package:welcome_project_fe/util/DesktopSideBar.dart';
 
 import '../../model/low_stock_item.dart';
 import '../../model/category.dart';
-import '../../api_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, this.userId});
@@ -205,7 +204,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Desktop: 4 boxes in a row
   Widget _buildDesktopDashboardBoxes() {
     return Row(
       children: [
@@ -246,7 +244,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Mobile: 2x2 grid for boxes
+  // mobile 2x2
   Widget _buildMobileDashboardBoxes() {
     return Column(
       children: [
@@ -295,7 +293,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Desktop: Supplier Carousel on left, Right Panel on right
+  // left right
   Widget _buildDesktopLayout() {
     return SizedBox(
       height: 260,
@@ -313,7 +311,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Mobile: Supplier Carousel on top, Right Panel below
+  // up down
   Widget _buildMobileLayout() {
     return Column(
       children: [
