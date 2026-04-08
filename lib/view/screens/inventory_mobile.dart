@@ -18,6 +18,8 @@ class _InventoryMobileState extends State<InventoryMobile> {
     void initState() {
     super.initState();
     loadInventory();
+    loadCategories();
+
 }
 
   Future<void> loadInventory() async {
@@ -35,6 +37,25 @@ class _InventoryMobileState extends State<InventoryMobile> {
     print(e);
   }
 }
+
+
+Future<void> loadCategories() async {
+  try {
+    final data = await ApiService.getAllCategories();
+
+    setState(() {
+      categories = [
+        'All Categories',
+        ...data.map((item) => item['category_name'].toString()),
+      ];
+    });
+
+    print('categories length: ${categories.length}');
+  } catch (e) {
+    print('loadCategories error: $e');
+  }
+}
+
 
   Future<void> searchInventory(String name) async {
     try {
@@ -57,13 +78,41 @@ class _InventoryMobileState extends State<InventoryMobile> {
     }
   }
 
-  String selectedCategory = 'All Categories';
 
-  final List<String> categories = [
-    'All Categories',
-    'Electronics',
-    'Furniture',
-  ];
+  Future<void> filterByCategory(String categoryName) async {
+  try {
+    if (categoryName == 'All Categories') {
+      loadInventory();
+      return;
+    }
+
+    final data = await ApiService.getAllCategories();
+
+    final selected = data.firstWhere(
+      (item) => item['category_name'] == categoryName,
+    );
+
+    final int categoryId = selected['category_id'];
+
+    final inventoryData =
+        await ApiService.getInventoryByCategoryID(categoryId);
+
+    setState(() {
+      items = inventoryData
+          .map((item) => Inventory.fromJson(item))
+          .toList();
+    });
+
+    print('filtered items length: ${items.length}');
+  } catch (e) {
+    print('filterByCategory error: $e');
+  }
+}
+
+
+String selectedCategory = 'All Categories';
+
+List<String> categories = ['All Categories'];
 
   int get totalItems => items.length;
 
@@ -142,10 +191,13 @@ class _InventoryMobileState extends State<InventoryMobile> {
                     );
                   }).toList(),
                   onChanged: (value) {
-                    setState(() {
-                      selectedCategory = value!;
+                    if(value== null)return;
+
+                      setState(() {
+                      selectedCategory = value;
                     });
-                  },
+                    filterByCategory(value);
+                    },
                 ),
               ),
 
