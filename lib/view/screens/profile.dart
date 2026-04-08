@@ -3,6 +3,7 @@ import 'package:welcome_project_fe/model/user.dart';
 import 'package:welcome_project_fe/util/ImageConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:welcome_project_fe/api_service.dart';
+import 'package:welcome_project_fe/util/snackbar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -69,15 +70,11 @@ class ProfileScreenState extends State<ProfileScreen> {
       );
       await loadUserData();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
-        );
+        showRightSnackbar(context, 'Profile updated successfully', isError: false);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to save profile: $e')));
+        showRightSnackbar(context, 'Failed to save profile: $e', isError: true);
       }
     }
   }
@@ -89,20 +86,14 @@ class ProfileScreenState extends State<ProfileScreen> {
 
     if (currentPass.isEmpty || newPass.isEmpty || confirmPass.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill in all password fields')),
-        );
+        showRightSnackbar(context, 'Please fill in all password fields', isError: true);
       }
       return;
     }
 
     if (newPass != confirmPass) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('New password and confirmation do not match'),
-          ),
-        );
+        showRightSnackbar(context, 'New password and confirmation do not match', isError: true);  
       }
       return;
     }
@@ -119,15 +110,11 @@ class ProfileScreenState extends State<ProfileScreen> {
       confirmPasswordController.clear();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password updated successfully')),
-        );
+        showRightSnackbar(context, 'Password updated successfully', isError: false);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update password: $e')),
-        );
+        showRightSnackbar(context, 'Failed to update password: $e', isError: true);
       }
     }
   }
@@ -218,12 +205,7 @@ class ProfileScreenState extends State<ProfileScreen> {
 
             const Divider(),
 
-            buildInfoRow(
-              'Member Since:',
-              currentUser?.createdAt.isNotEmpty == true
-                  ? currentUser!.createdAt
-                  : 'January 15, 2024',
-            ),
+            Text('Member Since: ${formatDate(currentUser?.createdAt)}'),
 
             const SizedBox(height: 24),
 
@@ -305,7 +287,7 @@ class ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 8),
         Text('Email: ${currentUser?.userEmail ?? emailController.text}'),
         const SizedBox(height: 8),
-        Text('Last Updated: ${currentUser?.updatedAt ?? 'N/A'}'),
+        Text('Last Updated: ${formatDate(currentUser?.updatedAt)}'),
       ],
     );
   }
@@ -498,17 +480,9 @@ class ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Helper to build simple label-value rows for profile info
-  Widget buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
+  String formatDate(String? date) {
+    if (date == null || date == 'N/A') return 'January 15, 2024';
+    final dt = DateTime.tryParse(date) ?? DateTime.now();
+    return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
   }
 }
