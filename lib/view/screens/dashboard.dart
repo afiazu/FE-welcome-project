@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
+import 'package:welcome_project_fe/view/screens/inventory.dart';
 import '../../util/welcomeSection.dart';
 import '../../util/dashboardBox.dart';
 import '../../util/supplier_carousel.dart';
@@ -7,7 +8,8 @@ import '../../model/supplier.dart';
 import '../../api_service.dart'; 
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({super.key, this.userId});
+  final int? userId;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -15,12 +17,11 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   String selectedCard = "Total Items";
-  
-  // Add loading and error states
   bool _isLoading = true;
   String? _errorMessage;
+  bool _isLoadingUser = true;
+  String _username = 'Guest';
   
-  // Real data from backend
   List<Supplier> _suppliers = [];
   Map<String, dynamic> _dashboardStats = {};
 
@@ -28,6 +29,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _fetchData();
+    _fetchUsername();
+  }
+
+  Future<void> _fetchUsername() async {
+    if (widget.userId == null) {
+      setState(() {
+        _isLoadingUser = false;
+      });
+      return;
+    }
+    
+    try {
+      final user = await ApiService.getUserById(widget.userId.toString());
+      setState(() {
+        _username = user.username;
+        _isLoadingUser = false;
+      });
+    } catch (e) {
+      print('Error fetching username: $e');
+      setState(() {
+        _isLoadingUser = false;
+      });
+    }
   }
 
   Future<void> _fetchData() async {
@@ -37,7 +61,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
 
     try {
-      // Fetch suppliers and stats in parallel
       final results = await Future.wait([
         ApiService.getAllSuppliers(),
         ApiService.getDashboardStats(),
@@ -58,6 +81,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _refreshData() async {
     await _fetchData();
+    await _fetchUsername();
   }
 
   @override
@@ -77,7 +101,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              const WelcomeSection(),
+              // Show loading indicator while fetching username
+              _isLoadingUser
+                  ? const SizedBox(
+                      height: 50,
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : WelcomeSection(userName: _username),
               const SizedBox(height: 30),
 
               // Show loading indicator or dashboard boxes
@@ -116,7 +148,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           value: _dashboardStats['totalItems']?.toString() ?? '0',
           icon: Icons.inventory,
           iconColor: Colors.blue,
-          onTap: () => _updatePanel('Total Items'),
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen()));
+          },
         ),
         const SizedBox(width: 12),
         DashboardBox(
