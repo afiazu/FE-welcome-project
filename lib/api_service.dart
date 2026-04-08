@@ -136,7 +136,7 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> login(String username, String password) async {
-    final url = Uri.parse('$_baseUrl/users/login'); 
+    final url = Uri.parse('$_baseUrl/users'); 
     try {
       final response = await http.post(
         url,
@@ -223,4 +223,6 @@ class ApiService {
       throw e.toString();
     }
   }
+
+  
 }
