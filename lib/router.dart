@@ -21,7 +21,13 @@ void initializeGoRouter() {
       ),
       GoRoute(
         path: '/dashboard',
-        builder: (context, state) => DashboardScreen() 
+        builder: (context, state) {
+          final userId = state.extra as int?;
+
+          return DashboardScreen(
+            userId: userId,
+          );
+        }
       ),
       GoRoute(
         path: '/inventory',

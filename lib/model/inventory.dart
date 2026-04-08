@@ -6,6 +6,10 @@ class Inventory {
   final String status;
   final String location;
 
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt; // nullable
+
   Inventory({
     required this.id,
     required this.name,
@@ -13,6 +17,9 @@ class Inventory {
     required this.quantity,
     required this.status,
     required this.location,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
   });
 
   factory Inventory.fromJson(Map<String, dynamic> json) {
@@ -23,7 +30,13 @@ class Inventory {
       quantity: json['inventory_quantity'],
       status: json['inventory_status'],
       location: json['inventory_location'] ?? '',
+
+      // timestamps
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      deletedAt: json['deleted_at'] != null
+          ? DateTime.parse(json['deleted_at'])
+          : null,
     );
   }
-
 }
