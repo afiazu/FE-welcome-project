@@ -5,6 +5,7 @@ import 'package:welcome_project_fe/util/ImageConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:welcome_project_fe/api_service.dart';
 import 'package:welcome_project_fe/util/snackbar.dart';
+import 'package:welcome_project_fe/util/profileSectionCard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -45,39 +46,36 @@ class ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> loadUserData() async {
-  setState(() => isLoading = true);
+    setState(() => isLoading = true);
 
-  try {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    
-    // DEBUG: Let's see what is actually there
-    final int? storedId = prefs.getInt('user_id');
-    debugPrint("DEBUG: Retrieved ID from Prefs: $storedId");
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final int? storedId = prefs.getInt('user_id');
 
-    if (storedId == null) {
-      debugPrint("No user ID found. Check if Login saves 'user_id'");
+      if (storedId == null) {
+        debugPrint("No user ID found. Check if Login saves 'user_id'");
+        setState(() => isLoading = false);
+        return;
+      }
+
+      // Ensure the class variable is updated
+      setState(() {
+        userId = storedId.toString();
+      });
+
+      UserModel user = await ApiService.getUserById(storedId.toString());
+
+      setState(() {
+        currentUser = user;
+        usernameController.text = user.username;
+        emailController.text = user.userEmail;
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("API Error: $e");
       setState(() => isLoading = false);
-      return; 
     }
-
-    // Ensure the class variable is updated
-    setState(() {
-      userId = storedId.toString(); 
-    });
-
-    UserModel user = await ApiService.getUserById(storedId.toString());
-
-    setState(() {
-      currentUser = user;
-      usernameController.text = user.username;
-      emailController.text = user.userEmail;
-      isLoading = false;
-    });
-  } catch (e) {
-    debugPrint("API Error: $e");
-    setState(() => isLoading = false);
   }
-}
 
   Future<void> saveProfileChanges() async {
     try {
@@ -117,11 +115,7 @@ class ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
-      await ApiService.updateUserPassword(
-        userId!,
-        currentPass,
-        newPass,
-      );
+      await ApiService.updateUserPassword(userId!, currentPass, newPass);
 
       currentPasswordController.clear();
       newPasswordController.clear();
@@ -158,7 +152,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                 bool isMobile = constraints.maxWidth < 600;
 
                 if (isMobile) {
-                  // MOBILE VIEW: Stack everything vertically
+                  // mobile view
                   return SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -170,7 +164,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                     ),
                   );
                 } else {
-                  // DESKTOP VIEW: Side-by-side layout
+                  // desktop view
                   return SingleChildScrollView(
                     padding: const EdgeInsets.all(32),
                     child: Row(
@@ -197,6 +191,7 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   Widget buildLeftCard(BuildContext context) {
     return Card(
+      margin: EdgeInsets.zero,
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -343,9 +338,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   Widget buildPasswordView() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text("Don't worry, we won't show your password here!"),
-      ],
+      children: const [Text("Don't worry, we won't show your password here!")],
     );
   }
 
@@ -389,93 +382,6 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   // --- HELPER WIDGETS ---
 
-  // Helper to build section cards with optional edit buttons
-  Widget buildSectionCard({
-    required String title,
-    required Widget child,
-    required Widget subtitle,
-    bool isEditing = false,
-    VoidCallback? onButtonPressed,
-    String? buttonText,
-  }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Check if we're on mobile or desktop based on available width
-        bool isMobile = constraints.maxWidth < 600;
-
-        Widget actionButton = onButtonPressed != null
-            ? SizedBox(
-                width: isMobile
-                    ? double.infinity
-                    : null, // Full width on mobile, auto on desktop
-                child: TextButton(
-                  onPressed: onButtonPressed,
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: ColorConstants.ubtsBlue,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(buttonText ?? ''),
-                ),
-              )
-            : const SizedBox.shrink(); // Empty widget if no button
-
-        return Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
-          ),
-          color: Colors.white,
-          margin: const EdgeInsets.only(bottom: 16),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          subtitle,
-                        ],
-                      ),
-                    ),
-                    if (!isMobile) actionButton,
-                  ],
-                ),
-                const SizedBox(height: 24),
-                child,
-
-                if (isMobile && onButtonPressed != null) ...[
-                  const SizedBox(height: 24),
-                  actionButton,
-                ],
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   // Helper to build read-only data fields with icons
   Widget buildDataField(String label, String value, IconData icon) {
     return SizedBox(
@@ -504,8 +410,12 @@ class ProfileScreenState extends State<ProfileScreen> {
   }
 
   String formatDate(String? date) {
-    if (date == null || date == 'N/A') return 'January 15, 2024';
-    final dt = DateTime.tryParse(date) ?? DateTime.now();
-    return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
+    if (date == null || date == 'N/A') return 'N/A';
+
+    // .toLocal() to convert UTC from DB to your device time
+    final dt = DateTime.tryParse(date)?.toLocal() ?? DateTime.now();
+
+    return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} "
+    "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}";
   }
 }
