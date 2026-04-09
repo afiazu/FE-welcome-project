@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:welcome_project_fe/api_service.dart';
 import 'package:welcome_project_fe/util/ImageConstants.dart';
-import 'package:welcome_project_fe/util/IconConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:welcome_project_fe/util/snackbar.dart';
 
-
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   
   bool rememberMe = false;
 
   final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   @override
@@ -75,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                     
                           const Text(
-                            'Sign In',
+                            'Sign Up',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -89,6 +86,19 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: InputDecoration(
                               labelText: 'Username',
                               prefixIcon: Icon(Icons.person),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          TextField(
+                            controller: emailController,
+                            decoration: InputDecoration(
+                              labelText: 'Email',
+                              prefixIcon: Icon(Icons.email),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -109,48 +119,16 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-              
-                          const SizedBox(height: 5.0),
-                    
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: rememberMe,
-                                onChanged: (value) {
-                                  setState(() {
-                                    rememberMe = value ?? false;
-                                  });
-                                },
-                              ),
-                              const Text('Remember me'),
-                            ],
-                          ),
                     
                           const SizedBox(height: 10.0),
                     
-                          // login
+                          // Register Button
                           SizedBox(
                             width: double.infinity,
                             height: 48,
                             child: ElevatedButton(
-                              onPressed: () async {
-                                try {
-                                  final response = await ApiService.login(
-                                    usernameController.text, 
-                                    passwordController.text
-                                  );
+                              onPressed: () {
 
-                                final userId = response['user_id'];
-
-                                final preferences = await SharedPreferences.getInstance();
-                                await preferences.setInt('user_id', userId);
-
-                                context.go('/dashboard', extra: userId);
-                                
-                                } catch (e) {
-                                  // error
-                                  showRightSnackbar(context, 'Login Failed', isError: true);
-                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: ColorConstants.ubtsBlue,
@@ -159,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               child: const Text(
-                                'Login',
+                                'Sign Up',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -170,24 +148,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                     
                           const SizedBox(height: 12),
-                    
-                          TextButton(
-                            onPressed: () {
-
-                            },
-                            child: const Text('Forgot password?'),
-                          ),
                           
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             
                             children: [
-                              const Text('Don\'t have an account?'),
+                              const Text('Already have an account?'),
                               TextButton(
                                 onPressed: () {
-                                  context.go('/register');
+                                  context.go('/login');
                                 },
-                                child: const Text('Sign Up'),
+                                child: const Text('Sign In'),
                               ),
                             ],
                           ),
@@ -201,6 +172,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-    );
+    );;
   }
 }
