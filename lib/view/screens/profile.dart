@@ -45,6 +45,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
   final TextEditingController imageUrlController = TextEditingController();
+  final TextEditingController userBioController = TextEditingController();
 
   @override
   void initState() {
@@ -147,6 +148,7 @@ class ProfileScreenState extends State<ProfileScreen> {
         usernameController.text = user.username;
         emailController.text = user.userEmail;
         imageUrlController.text = user.profileImageUrl ?? '';
+        userBioController.text = user.userBio ?? '';
         this.activities = activities;
         isLoading = false;
       });
@@ -170,6 +172,7 @@ class ProfileScreenState extends State<ProfileScreen> {
         usernameController.text.trim(),
         emailController.text.trim(),
         imageUrlController.text.trim(),
+        userBioController.text.trim(),
       );
       await loadUserData();
       if (mounted) {
@@ -288,19 +291,34 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildBodyLayout(bool isDesktop) {
     if (!isDesktop) {
+      // Mobile Layout
       return Column(
         children: [
           buildLeftCard(context),
+          const SizedBox(height: 20),
+          buildNoteCard(), // User Bio Card
           const SizedBox(height: 20),
           buildRightCard(context),
         ],
       );
     } else {
+      // Desktop Layout
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(flex: 1, child: buildLeftCard(context)),
+          // LEFT COLUMN (1/3 of the space)
+          Expanded(
+            flex: 1,
+            child: Column(
+              children: [
+                buildLeftCard(context),
+                const SizedBox(height: 20),
+                buildNoteCard(),
+              ],
+            ),
+          ),
           const SizedBox(width: 32),
+          // RIGHT COLUMN (2/3 of the space)
           Expanded(flex: 2, child: buildRightCard(context)),
         ],
       );
@@ -340,14 +358,9 @@ class ProfileScreenState extends State<ProfileScreen> {
               label: const Text("Change Photo via URL"),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.blue,
-                side: const BorderSide(
-                  color: Colors.blue,
-                  width: 1,
-                ),
+                side: const BorderSide(color: Colors.blue, width: 1),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    8,
-                  ),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -369,6 +382,52 @@ class ProfileScreenState extends State<ProfileScreen> {
             Text('Member Since: ${formatDate(currentUser?.createdAt)}'),
 
             const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildNoteCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "About Me",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.save, color: Colors.blue, size: 20),
+                  onPressed: () =>
+                      saveProfileChanges(), // Reusing your save function
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller:
+                  userBioController, // Add this controller at the top of your class
+              maxLines: 4,
+              style: const TextStyle(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: "Tell us something about yourself...",
+                filled: true,
+                fillColor: Colors.grey[50],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+              ),
+            ),
           ],
         ),
       ),

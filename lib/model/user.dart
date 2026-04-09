@@ -6,6 +6,7 @@ class UserModel {
   final String password;
   final String createdAt;
   final String updatedAt;
+  final String? userBio;
 
   UserModel({
     required this.userId,
@@ -15,6 +16,7 @@ class UserModel {
     required this.password,
     required this.createdAt,
     required this.updatedAt,
+    this.userBio,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class UserModel {
       password: json['password'] ?? json['user_password'] ?? '',
       createdAt: json['created_at'] ?? json['createdAt'] ?? '',
       updatedAt: json['updated_at'] ?? json['updatedAt'] ?? '',
+      userBio: json['user_bio'],
     );
   }
 }
