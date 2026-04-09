@@ -140,10 +140,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                     passwordController.text
                                   );
 
+                                final token = response['token'];
                                 final userId = response['user_id'];
 
                                 final preferences = await SharedPreferences.getInstance();
                                 await preferences.setInt('user_id', userId);
+                                await preferences.setString('token', token);
+                                await preferences.setString('username', usernameController.text);
 
                                 context.go('/dashboard', extra: userId);
                                 
