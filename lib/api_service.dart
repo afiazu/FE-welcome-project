@@ -197,9 +197,9 @@ class ApiService {
     }
   }
 
-  static Future<void> updateUserInfo(String userId, String username, String email) async {
+  static Future<void> updateUserInfo(String userId, String username, String email, String profileImageUrl) async {
     final url = Uri.parse('$_baseUrl/users/$userId');
-    final body = jsonEncode({'user_name': username, 'user_email': email});
+    final body = jsonEncode({'user_name': username, 'user_email': email, 'user_profileImageUrl': profileImageUrl});
 
     try {
       final response = await http.put(
