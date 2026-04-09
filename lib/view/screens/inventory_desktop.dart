@@ -48,6 +48,7 @@ Widget _buildHeaderCell(String text, {bool isCenter = false}) {
   String selectedCategory = 'All Categories';
   List<String> categories = ['All Categories'];
   TextEditingController searchController = TextEditingController();
+  String selectedStatusCard = 'Total';
 
   @override
   void initState() {
@@ -56,83 +57,124 @@ Widget _buildHeaderCell(String text, {bool isCenter = false}) {
     loadCategories();
   }
 
-  Future<void> loadInventory() async {
-    try {
-      final data = await ApiService.getAllInventoryItems();
+    Future<void> loadInventory() async {
+      try {
+        final data = await ApiService.getAllInventoryItems();
 
-      setState(() {
-        items = data.map((item) => Inventory.fromJson(item)).toList();
-      });
+        
+        setState(() {
+          items = data;
+          selectedStatusCard = 'Total';
+        });
 
-      print('items length: ${items.length}');
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  Future<void> loadCategories() async {
-    try {
-      final data = await ApiService.getAllCategories();
-
-      setState(() {
-        categories = [
-          'All Categories',
-          ...data.map((item) => item['category_name'].toString()),
-        ];
-      });
-
-      print('categories length: ${categories.length}');
-    } catch (e) {
-      print('loadCategories error: $e');
-    }
-  }
-
-  Future<void> searchInventory(String name) async {
-    try {
-      if (name.isEmpty) {
-        loadInventory();
-        return;
+        print('items length: ${items.length}');
+      } catch (e) {
+        print('loadInventory error: $e');
       }
-
-      final data = await ApiService.searchInventoryByName(name);
-
-      setState(() {
-        items = data.map((item) => Inventory.fromJson(item)).toList();
-      });
-
-      print('search items length: ${items.length}');
-    } catch (e) {
-      print('searchInventory error: $e');
     }
-  }
 
-  Future<void> filterByCategory(String categoryName) async {
-    try {
-      if (categoryName == 'All Categories') {
-        loadInventory();
-        return;
+    Future<void> loadCategories() async {
+      try {
+        final data = await ApiService.getAllCategories();
+
+        setState(() {
+          categories = [
+            'All Categories',
+            ...data.map((item) => item['category_name'].toString()),
+          ];
+        });
+
+        print('categories length: ${categories.length}');
+      } catch (e) {
+        print('loadCategories error: $e');
       }
-
-      final data = await ApiService.getAllCategories();
-
-      final selected = data.firstWhere(
-        (item) => item['category_name'] == categoryName,
-      );
-
-      final int categoryId = selected['category_id'];
-
-      final inventoryData =
-          await ApiService.getInventoryByCategoryID(categoryId);
-
-      setState(() {
-        items = inventoryData.map((item) => Inventory.fromJson(item)).toList();
-      });
-
-      print('filtered items length: ${items.length}');
-    } catch (e) {
-      print('filterByCategory error: $e');
     }
-  }
+
+    Future<void> searchInventory(String name) async {
+      try {
+        if (name.isEmpty) {
+          loadInventory();
+          return;
+        }
+
+        final data = await ApiService.searchInventoryByName(name);
+
+        setState(() {
+          items = data;
+        });
+
+        print('search items length: ${items.length}');
+      } catch (e) {
+        print('searchInventory error: $e');
+      }
+    }
+
+    Future<void> filterByCategory(String categoryName) async {
+      try {
+        if (categoryName == 'All Categories') {
+          loadInventory();
+          return;
+        }
+
+        final data = await ApiService.getAllCategories();
+
+        final selected = data.firstWhere(
+          (item) => item['category_name'] == categoryName,
+        );
+
+        final int categoryId = selected['category_id'];
+
+        final inventoryData =
+            await ApiService.getInventoryByCategoryID(categoryId);
+
+        setState(() {
+          items = inventoryData;
+        });
+
+        print('filtered items length: ${items.length}');
+      } catch (e) {
+        print('filterByCategory error: $e');
+      }
+    }
+
+    Future<void> loadActiveItems() async {
+      try {
+        final data = await ApiService.getActiveItems();
+
+        setState(() {
+          items = data;
+          selectedStatusCard = 'Active';
+        });
+      } catch (e) {
+        print('loadActiveItems error: $e');
+      }
+    }
+
+    Future<void> loadArchivedItems() async {
+      try {
+        final data = await ApiService.getArchivedItems();
+
+        setState(() {
+          items = data;
+          selectedStatusCard = 'Archive';
+        });
+      } catch (e) {
+        print('loadArchivedItems error: $e');
+      }
+    }
+/* 
+    Future<void> loadDiscontinuedItems() async {
+      try {
+        final data = await ApiService.getDiscontinuedItems();
+
+        setState(() {
+          items = data;
+          selectedStatusCard = 'Discontinued';
+        });
+      } catch (e) {
+        print('loadDiscontinuedItems error: $e');
+      }
+    } */
 
   int get totalItems => items.length;
 
@@ -240,16 +282,21 @@ Widget _buildHeaderCell(String text, {bool isCenter = false}) {
 
                               Row(
                                 children: [
-                                  _buildCard('Total', totalItems.toString()),
+                                  _buildCard('Total', totalItems.toString(), () {
+                                    loadInventory();
+                                  }),
                                   const SizedBox(width: 12),
-                                  _buildCard('Active', activeItems.toString()),
+                                  _buildCard('Active', activeItems.toString(), () {
+                                    loadActiveItems();
+                                  }),
                                   const SizedBox(width: 12),
-                                  _buildCard('Archive', archivedItems.toString()),
+                                  _buildCard('Archive', archivedItems.toString(), () {
+                                    loadArchivedItems();
+                                  }),
                                   const SizedBox(width: 12),
-                                  _buildCard(
-                                    'Discontinued',
-                                    discontinuedItems.toString(),
-                                  ),
+                                  _buildCard('Discontinued', discontinuedItems.toString(), () {
+                                   // loadDiscontinuedItems();
+                                  }),
                                 ],
                               ),
 
@@ -379,14 +426,22 @@ Widget _buildHeaderCell(String text, {bool isCenter = false}) {
     );
   }
 
-  Widget _buildCard(String title, String value) {
-    return Expanded(
+Widget _buildCard(String title, String value, VoidCallback onTap) {
+  final bool isSelected = selectedStatusCard == title;
+
+  return Expanded(
+    child: InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isSelected ? ColorConstants.ubtsBlue.withOpacity(0.08) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(
+            color: isSelected ? ColorConstants.ubtsBlue : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,8 +452,9 @@ Widget _buildHeaderCell(String text, {bool isCenter = false}) {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class InventoryDetailsPopup extends StatelessWidget {

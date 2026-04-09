@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:welcome_project_fe/model/activity.dart';
+import 'package:welcome_project_fe/model/inventory.dart';
 import 'package:welcome_project_fe/model/user.dart';
 import '../model/supplier.dart';
 import '../model/low_stock_item.dart';
@@ -80,47 +81,51 @@ class ApiService {
       return [];
     }
   }
-
-  static Future<List<dynamic>> getAllInventoryItems() async {
-    final url = Uri.parse('$_baseUrl/inventory');
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to fetch inventory: ${response.statusCode}');
+    static Future<List<Inventory>> getAllInventoryItems() async {
+      final url = Uri.parse('$_baseUrl/inventory');
+      try {
+        final response = await http.get(url);
+        if (response.statusCode == 200) {
+          List<dynamic> body = jsonDecode(response.body);
+          return body.map((json) => Inventory.fromJson(json)).toList();
+        } else {
+          return [];
+        }
+      } catch (e) {
+        print('Error fetching all inventory items: $e');
+        return [];
       }
-    } catch (e) {
-      throw Exception('Error fetching inventory: $e');
     }
-  }
 
-  static Future<List<dynamic>> getInventoryByCategoryID(int categoryId) async {
+  static Future<List<Inventory>> getInventoryByCategoryID(int categoryId) async {
     final url = Uri.parse('$_baseUrl/inventory/category/$categoryId');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        List<dynamic> body = jsonDecode(response.body);
+        return body.map((json) => Inventory.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to fetch category items: ${response.statusCode}');
+        return [];
       }
     } catch (e) {
-      throw Exception('Error fetching category items: $e');
+      print('Error fetching inventory by category: $e');
+      return [];
     }
   }
 
-  static Future<List<dynamic>> searchInventoryByName(String name) async {
-    final url = Uri.parse(
-        '$_baseUrl/inventory/search?name=${Uri.encodeComponent(name)}');
+  static Future<List<Inventory>> searchInventoryByName(String name) async {
+    final url = Uri.parse('$_baseUrl/inventory/search?name=$name');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        List<dynamic> body = jsonDecode(response.body);
+        return body.map((json) => Inventory.fromJson(json)).toList();
       } else {
-        throw Exception('Search failed: ${response.statusCode}');
+        return [];
       }
     } catch (e) {
-      throw Exception('Error searching inventory: $e');
+      print('Error searching inventory: $e');
+      return [];
     }
   }
 
@@ -287,13 +292,13 @@ class ApiService {
     }
   }
   
-  static Future<List<LowStockItem>> getActiveItems() async {
+  static Future<List<Inventory>> getActiveItems() async {
   final url = Uri.parse('$_baseUrl/inventory/active');
   try {
     final response = await http.get(url);
     if (response.statusCode == 200) {
       List<dynamic> body = jsonDecode(response.body);
-      return body.map((json) => LowStockItem.fromJson(json)).toList();
+      return body.map((json) => Inventory.fromJson(json)).toList();
     } else {
       return [];
     }
@@ -303,13 +308,13 @@ class ApiService {
   }
 }
 
-static Future<List<LowStockItem>> getArchivedItems() async {
+static Future<List<Inventory>> getArchivedItems() async {
   final url = Uri.parse('$_baseUrl/inventory/archived');
   try {
     final response = await http.get(url);
     if (response.statusCode == 200) {
       List<dynamic> body = jsonDecode(response.body);
-      return body.map((json) => LowStockItem.fromJson(json)).toList();
+      return body.map((json) => Inventory.fromJson(json)).toList();
     } else {
       return [];
     }
