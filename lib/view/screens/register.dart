@@ -1,32 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:welcome_project_fe/api_service.dart';
 import 'package:welcome_project_fe/util/ImageConstants.dart';
-import 'package:welcome_project_fe/util/IconConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:welcome_project_fe/util/snackbar.dart';
 
-
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  
-  bool rememberMe = false;
+class _RegisterScreenState extends State<RegisterScreen> {
 
   final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  bool isValidEmail(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Remove default background color, we'll use gradient
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -75,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                     
                           const Text(
-                            'Sign In',
+                            'Sign Up',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -89,6 +87,19 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: InputDecoration(
                               labelText: 'Username',
                               prefixIcon: Icon(Icons.person),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          TextField(
+                            controller: emailController,
+                            decoration: InputDecoration(
+                              labelText: 'Email',
+                              prefixIcon: Icon(Icons.email),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -109,48 +120,36 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-              
-                          const SizedBox(height: 5.0),
-                    
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: rememberMe,
-                                onChanged: (value) {
-                                  setState(() {
-                                    rememberMe = value ?? false;
-                                  });
-                                },
-                              ),
-                              const Text('Remember me'),
-                            ],
-                          ),
                     
                           const SizedBox(height: 10.0),
                     
-                          // login
+                          // Register Button
                           SizedBox(
                             width: double.infinity,
                             height: 48,
                             child: ElevatedButton(
                               onPressed: () async {
-                                try {
-                                  final response = await ApiService.login(
-                                    usernameController.text, 
-                                    passwordController.text
-                                  );
+                                String username = usernameController.text.trim();
+                                String email = emailController.text.trim();
+                                String password = passwordController.text.trim();
 
-                                final userId = response['user_id'];
-
-                                final preferences = await SharedPreferences.getInstance();
-                                await preferences.setInt('user_id', userId);
-
-                                context.go('/dashboard', extra: userId);
-                                
-                                } catch (e) {
-                                  // error
-                                  showRightSnackbar(context, 'Login Failed', isError: true);
+                                if (username.isEmpty || email.isEmpty || password.isEmpty) {
+                                  showRightSnackbar(context, 'Please fill in all fields');
+                                  return;
                                 }
+                                if (!isValidEmail(email)) {
+                                  showRightSnackbar(context, 'Please enter a valid email');
+                                  return;
+                                }
+
+                                try{
+                                  await ApiService.register(username, email, password);
+                                  showRightSnackbar(context, 'Registration successful! Please log in.');
+                                  context.go('/login');
+                                }catch(e){
+                                  showRightSnackbar(context, 'Registration failed: ${e.toString()}');
+                                }
+
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: ColorConstants.ubtsBlue,
@@ -159,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               child: const Text(
-                                'Login',
+                                'Sign Up',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -170,24 +169,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                     
                           const SizedBox(height: 12),
-                    
-                          TextButton(
-                            onPressed: () {
-
-                            },
-                            child: const Text('Forgot password?'),
-                          ),
                           
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             
                             children: [
-                              const Text('Don\'t have an account?'),
+                              const Text('Already have an account?'),
                               TextButton(
                                 onPressed: () {
-                                  context.go('/register');
+                                  context.go('/login');
                                 },
-                                child: const Text('Sign Up'),
+                                child: const Text('Sign In'),
                               ),
                             ],
                           ),

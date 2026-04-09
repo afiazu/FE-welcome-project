@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:welcome_project_fe/view/screens/inventory.dart';
 import 'package:welcome_project_fe/view/screens/login.dart';
 import 'package:welcome_project_fe/view/screens/profile.dart';
+import 'package:welcome_project_fe/view/screens/register.dart';
 import './view/screens/dashboard.dart';
 
 late final GoRouter router;
@@ -15,6 +16,10 @@ void initializeGoRouter() {
       GoRoute(
         path: '/login',
         builder: (context, state) => LoginScreen(),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => RegisterScreen(),
       ),
       GoRoute(
         path: '/dashboard',
