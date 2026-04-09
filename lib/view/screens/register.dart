@@ -13,17 +13,18 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  
-  bool rememberMe = false;
 
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  bool isValidEmail(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Remove default background color, we'll use gradient
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -127,7 +128,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             width: double.infinity,
                             height: 48,
                             child: ElevatedButton(
-                              onPressed: () {
+                              onPressed: () async {
+                                String username = usernameController.text.trim();
+                                String email = emailController.text.trim();
+                                String password = passwordController.text.trim();
+
+                                if (username.isEmpty || email.isEmpty || password.isEmpty) {
+                                  showRightSnackbar(context, 'Please fill in all fields');
+                                  return;
+                                }
+                                if (!isValidEmail(email)) {
+                                  showRightSnackbar(context, 'Please enter a valid email');
+                                  return;
+                                }
+
+                                try{
+                                  await ApiService.register(username, email, password);
+                                  showRightSnackbar(context, 'Registration successful! Please log in.');
+                                  context.go('/login');
+                                }catch(e){
+                                  showRightSnackbar(context, 'Registration failed: ${e.toString()}');
+                                }
 
                               },
                               style: ElevatedButton.styleFrom(
@@ -172,6 +193,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
-    );;
+    );
   }
 }

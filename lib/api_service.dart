@@ -263,5 +263,29 @@ class ApiService {
       return [];
     }
   }
-  
+
+  static Future<Map<String, dynamic>> register(String username,String email, String password) async {
+    final url = Uri.parse('$_baseUrl/users/register'); 
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': username,
+          'email': email,
+          'password': password
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        final Map<String, dynamic> errorBody = jsonDecode(response.body);
+        final String errorMessage = errorBody['error'] ?? 'Registration failed';
+        throw errorMessage; 
+      }
+    } catch (e) {
+      throw e.toString();
+    }
+  }  
 }
