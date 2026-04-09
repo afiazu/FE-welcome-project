@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:welcome_project_fe/model/user.dart';
+import 'package:welcome_project_fe/model/activity.dart';
 import 'package:welcome_project_fe/util/ImageConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:welcome_project_fe/api_service.dart';
@@ -24,12 +25,26 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   String? userId;
   UserModel? currentUser;
+  List<ActivityModel> activities = [];
+
+  Map<String, dynamic> _getActivityDetails(String activityType) {
+    switch (activityType.toLowerCase()) {
+      case 'update profile':
+        return {'icon': Icons.person, 'color': Colors.blue};
+      case 'change password':
+        return {'icon': Icons.lock, 'color': Colors.orange};
+      default:
+        return {'icon': Icons.info, 'color': Colors.grey};
+    }
+  }
 
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController currentPasswordController = TextEditingController();
+  final TextEditingController currentPasswordController =
+      TextEditingController();
   final TextEditingController newPasswordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
   @override
   void initState() {
@@ -60,22 +75,33 @@ class ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      // Ensure the class variable is updated
       setState(() {
         userId = storedId.toString();
       });
 
       UserModel user = await ApiService.getUserById(storedId.toString());
+      List<ActivityModel> activities = await ApiService.getActivitiesByUserId(
+        storedId.toString(),
+      );
 
       setState(() {
         currentUser = user;
         usernameController.text = user.username;
         emailController.text = user.userEmail;
+        this.activities = activities;
+
         isLoading = false;
       });
     } catch (e) {
       debugPrint("API Error: $e");
       setState(() => isLoading = false);
+      if (mounted) {
+        showRightSnackbar(
+          context,
+          'Failed to load profile data',
+          isError: true,
+        );
+      }
     }
   }
 
@@ -88,7 +114,11 @@ class ProfileScreenState extends State<ProfileScreen> {
       );
       await loadUserData();
       if (mounted) {
-        showRightSnackbar(context, 'Profile updated successfully', isError: false);
+        showRightSnackbar(
+          context,
+          'Profile updated successfully',
+          isError: false,
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -104,14 +134,22 @@ class ProfileScreenState extends State<ProfileScreen> {
 
     if (currentPass.isEmpty || newPass.isEmpty || confirmPass.isEmpty) {
       if (mounted) {
-        showRightSnackbar(context, 'Please fill in all password fields', isError: true);
+        showRightSnackbar(
+          context,
+          'Please fill in all password fields',
+          isError: true,
+        );
       }
       return;
     }
 
     if (newPass != confirmPass) {
       if (mounted) {
-        showRightSnackbar(context, 'New password and confirmation do not match', isError: true);  
+        showRightSnackbar(
+          context,
+          'New password and confirmation do not match',
+          isError: true,
+        );
       }
       return;
     }
@@ -123,17 +161,27 @@ class ProfileScreenState extends State<ProfileScreen> {
       newPasswordController.clear();
       confirmPasswordController.clear();
 
+      await loadUserData();
+
       if (mounted) {
-        showRightSnackbar(context, 'Password updated successfully', isError: false);
+        showRightSnackbar(
+          context,
+          'Password updated successfully',
+          isError: false,
+        );
       }
     } catch (e) {
       if (mounted) {
-        showRightSnackbar(context, 'Failed to update password: $e', isError: true);
+        showRightSnackbar(
+          context,
+          'Failed to update password: $e',
+          isError: true,
+        );
       }
     }
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     bool isDesktop = MediaQuery.of(context).size.width >= 500;
 
@@ -142,10 +190,14 @@ class ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text(
           'Profile Settings',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         backgroundColor: ColorConstants.ubtsBlue,
-        automaticallyImplyLeading: !isDesktop, 
+        automaticallyImplyLeading: !isDesktop,
       ),
       drawer: isDesktop ? null : const Mobilesidebar(),
       body: Stack(
@@ -213,7 +265,15 @@ class ProfileScreenState extends State<ProfileScreen> {
           children: [
             CircleAvatar(
               radius: 50,
-              backgroundImage: AssetImage(ImageConstants.UBTSlogo),
+              backgroundImage: NetworkImage('https://cdn.tourradar.com/s3/traveller/original/383701_3BCgWfah.jpg'),
+            ),
+            Positioned(
+              child: IconButton(
+                onPressed: () {},
+                icon: const Icon(Icons.add_a_photo),
+              ),
+              bottom: -10,
+              left: 80,
             ),
 
             const SizedBox(height: 16),
@@ -301,6 +361,45 @@ class ProfileScreenState extends State<ProfileScreen> {
           buttonText: isEditingPassword ? 'Save Changes' : 'Change Password',
           child: isEditingPassword ? buildPasswordForm() : buildPasswordView(),
         ),
+
+        const SizedBox(height: 20),
+
+        buildSectionCard(
+  title: "Recent Activity",
+  subtitle: Text("Showing ${activities.length} recent updates, scroll to see all updates"), // Change subtitle to be clear
+  child: activities.isEmpty
+      ? const Text("No recent activity found.")
+      : SizedBox(
+          height: 200, // Reduced height to FORCE scrolling even with fewer items
+          child: Scrollbar(
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              // PHYSICS: This helps with scrolling feel on different platforms
+              physics: const AlwaysScrollableScrollPhysics(), 
+              child: Column(
+                children: activities.asMap().entries.map((entry) { // Removed .take(4)
+                  int index = entry.key;
+                  ActivityModel activity = entry.value;
+                  var details = _getActivityDetails(activity.activityType);
+
+                  return Column(
+                    children: [
+                      buildActivityRow(
+                        icon: details['icon'],
+                        color: details['color'],
+                        title: activity.activityType.toUpperCase(),
+                        time: formatDate(activity.createdAt),
+                      ),
+                      // Only hide divider for the ABSOLUTE last item
+                      if (index != activities.length - 1) buildDivider(),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ),
+),
       ],
     );
   }
@@ -418,6 +517,55 @@ class ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget buildActivityRow({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String time,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            time,
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildDivider() {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: 44,
+      ), // Aligns with the text, not the icon
+      child: Divider(height: 24, thickness: 0.5, color: Colors.grey.shade200),
+    );
+  }
+
   String formatDate(String? date) {
     if (date == null || date == 'N/A') return 'N/A';
 
@@ -425,6 +573,6 @@ class ProfileScreenState extends State<ProfileScreen> {
     final dt = DateTime.tryParse(date)?.toLocal() ?? DateTime.now();
 
     return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} "
-    "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}";
+        "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}";
   }
 }

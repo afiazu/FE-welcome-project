@@ -22,18 +22,30 @@ Widget buildSectionCard({
                   : null, // Full width on mobile, auto on desktop
               child: TextButton(
                 onPressed: onButtonPressed,
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: ColorConstants.ubtsBlue,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                style: ButtonStyle(
+                  // Background color
+                  backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                    if (states.contains(WidgetState.hovered)) {
+                      return ColorConstants.ubtsBlue;
+                    }
+                    return ColorConstants.ubtsYellow;
+                  }),
+                  // Text color
+                  foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                    if (states.contains(WidgetState.hovered)) {
+                      return ColorConstants.textWhite;
+                    }
+                    return ColorConstants.textBlack;
+                  }),
+                  padding: WidgetStateProperty.all(const EdgeInsets.symmetric(vertical: 12, horizontal: 16)),
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: Colors.grey.shade300),
+                    ),
                   ),
                 ),
-                child: Text(buttonText ?? ''),
+                child: Text(buttonText ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             )
           : const SizedBox.shrink(); // Empty widget if no button
@@ -44,7 +56,7 @@ Widget buildSectionCard({
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: Colors.grey.shade300),
         ),
-        color: Colors.white,
+        color: ColorConstants.whiteBackground,
         margin: const EdgeInsets.only(bottom: 16),
         child: Padding(
           padding: const EdgeInsets.all(24),
