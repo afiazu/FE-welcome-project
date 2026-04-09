@@ -15,9 +15,11 @@ class _MobilesidebarState extends State<Mobilesidebar> {
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: Colors.grey[100],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero, 
+      ),
       child: Column(
         children: [
-          // Styled Header to match Desktop
           SizedBox(
             height: 150,
             child: Center(
@@ -56,9 +58,6 @@ class _MobilesidebarState extends State<Mobilesidebar> {
             fontWeight: FontWeight.bold,
             fontSize: 14,
           ),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
         ),
         onTap: onTap
       ),
