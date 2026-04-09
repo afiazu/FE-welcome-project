@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:welcome_project_fe/util/ImageConstants.dart';
 import 'package:go_router/go_router.dart';
+import 'package:welcome_project_fe/api_service.dart';
 
 class Desktopsidebar extends StatefulWidget {
   const Desktopsidebar({super.key});
@@ -40,26 +41,24 @@ class _DesktopsidebarState extends State<Desktopsidebar> {
             const SizedBox(height: 10),
 
             // Navigation Items
-            _sideItem(Icons.home, 'DASHBOARD', '/dashboard'),
-            _sideItem(Icons.inventory, 'INVENTORY', '/inventory'),
-            _sideItem(Icons.person, 'PROFILE', '/profile'),
+            _sideItem(Icons.home, 'DASHBOARD', onTap: () => context.go('/dashboard')),
+            _sideItem(Icons.inventory, 'INVENTORY', onTap: () => context.go('/inventory')),
+            _sideItem(Icons.person, 'PROFILE', onTap: () => context.go('/profile')),
 
             const Spacer(), // Logout at the bottom
 
-            _sideItem(Icons.logout, 'LOGOUT', '/login'),
+            _sideItem(Icons.logout, 'LOGOUT', onTap: () => ApiService.logout(context),),
           ],
         ),
       ),
     );
   }
 
-  Widget _sideItem(IconData icon, String label, String route) { 
+  Widget _sideItem(IconData icon, String label, {required VoidCallback onTap}) { 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       child: InkWell(
-        onTap: () {
-          context.go(route);
-        },
+        onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: Container(
           height: 50,
