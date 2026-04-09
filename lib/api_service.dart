@@ -264,4 +264,36 @@ class ApiService {
     }
   }
   
+  static Future<List<LowStockItem>> getActiveItems() async {
+  final url = Uri.parse('$_baseUrl/inventory/active');
+  try {
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      List<dynamic> body = jsonDecode(response.body);
+      return body.map((json) => LowStockItem.fromJson(json)).toList();
+    } else {
+      return [];
+    }
+  } catch (e) {
+    print('Error fetching active items: $e');
+    return [];
+  }
 }
+
+static Future<List<LowStockItem>> getArchivedItems() async {
+  final url = Uri.parse('$_baseUrl/inventory/archived');
+  try {
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      List<dynamic> body = jsonDecode(response.body);
+      return body.map((json) => LowStockItem.fromJson(json)).toList();
+    } else {
+      return [];
+    }
+  } catch (e) {
+    print('Error fetching archived items: $e');
+    return [];
+  }
+}
+}
+

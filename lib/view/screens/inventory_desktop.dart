@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:welcome_project_fe/model/inventory.dart';
+import 'package:welcome_project_fe/model/low_stock_item.dart';
 import 'package:welcome_project_fe/api_service.dart';
 import 'package:welcome_project_fe/util/DesktopSideBar.dart';
 
@@ -12,6 +13,37 @@ class InventoryDesktop extends StatefulWidget {
 }
 
 class _InventoryDesktopState extends State<InventoryDesktop> {
+
+Widget _buildHeaderCell(String text, {bool isCenter = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      child: isCenter
+          ? Center(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
+          : Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+    );
+  }
+
+  Widget _buildBodyCell(String text, {bool isCenter = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      child: isCenter ? Center(child: Text(text)) : Text(text),
+    );
+  }
+  
   List<Inventory> items = [];
   String selectedCategory = 'All Categories';
   List<String> categories = ['All Categories'];
@@ -242,135 +274,86 @@ class _InventoryDesktopState extends State<InventoryDesktop> {
                                       ),
                                       const SizedBox(height: 12),
 
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 10,
-                                          horizontal: 8,
-                                        ),
-                                        color: ColorConstants.ubtsBlue,
-                                        child: const Row(
-                                          children: [
-                                            Expanded(
-                                              flex: 1,
-                                              child: Text(
-                                                "Name",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: Center(
-                                                child: Text(
-                                                  "Qty",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: Text(
-                                                "Status",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: Text(
-                                                "Location",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: Text(
-                                                "Action",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
 
                                       Expanded(
-                                        child: ListView.builder(
-                                          itemCount: items.length,
-                                          itemBuilder: (context, index) {
-                                            final item = items[index];
-
-                                            return Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                vertical: 12,
-                                                horizontal: 8,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                border: Border(
-                                                  bottom: BorderSide(
-                                                    color: Colors.grey.shade300,
-                                                  ),
+                                            child: SingleChildScrollView(
+                                              child: Table(
+                                                border: TableBorder(
+                                                  horizontalInside: BorderSide(color: Colors.grey.shade300),
+                                                  verticalInside: BorderSide(color: Colors.grey.shade300),
+                                                  top: BorderSide(color: Colors.grey.shade300),
+                                                  bottom: BorderSide(color: Colors.grey.shade300),
                                                 ),
-                                              ),
-                                              child: Row(
+                                                columnWidths: const {
+                                                  0: FlexColumnWidth(2),
+                                                  1: FlexColumnWidth(1),
+                                                  2: FlexColumnWidth(1.5),
+                                                  3: FlexColumnWidth(1.5),
+                                                  4: FlexColumnWidth(1.5),
+                                                },
+                                                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                                                 children: [
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(item.name),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Center(
-                                                      child: Text(
-                                                        item.quantity.toString(),
-                                                      ),
+                                                  TableRow(
+                                                    decoration: const BoxDecoration(
+                                                      color: ColorConstants.ubtsBlue,
                                                     ),
+                                                    children: [
+                                                      _buildHeaderCell("Name"),
+                                                      _buildHeaderCell("Qty", isCenter: true),
+                                                      _buildHeaderCell("Status"),
+                                                      _buildHeaderCell("Location"),
+                                                      _buildHeaderCell("Action"),
+                                                    ],
                                                   ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(item.status),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(item.location),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Row(
+
+                                                  ...items.map((item) {
+                                                    return TableRow(
                                                       children: [
-                                                        ElevatedButton(
-                                                          onPressed: () {
-                                                            showDialog(
-                                                              context: context,
-                                                              builder: (context) =>
-                                                                  InventoryDetailsPopup(
-                                                                item: item,
-                                                              ),
-                                                            );
-                                                          },
-                                                          child: const Text("View"),
+                                                        _buildBodyCell(item.name),
+                                                        _buildBodyCell(item.quantity.toString(), isCenter: true),
+                                                        _buildBodyCell(item.status),
+                                                        _buildBodyCell(item.location),
+                                                        Padding(
+                                                          padding: const EdgeInsets.all(8),
+                                                          child: Align(
+                                                            alignment: Alignment.centerLeft,
+                                                            child: ElevatedButton(
+                                                            style: ButtonStyle(
+
+                                                              backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                                                                if (states.contains(WidgetState.hovered) ||
+                                                                    states.contains(WidgetState.pressed)) {
+                                                                  return ColorConstants.ubtsBlue;
+                                                                }
+                                                                return ColorConstants.ubtsYellow;
+                                                              }),
+                                                              foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                                                                if (states.contains(WidgetState.hovered) ||
+                                                                    states.contains(WidgetState.pressed)) {
+                                                                  return Colors.white;
+                                                                }
+                                                                return Colors.black;
+                                                              }),
+                                                            ),
+
+                                                              
+                                                              onPressed: () {
+                                                                showDialog(
+                                                                  context: context,
+                                                                  builder: (context) => InventoryDetailsPopup(item: item),
+                                                                );
+                                                              },
+                                                              child: const Text("View"),
+                                                            ),
+                                                          ),
                                                         ),
                                                       ],
-                                                    ),
-                                                  ),
+                                                    );
+                                                  }).toList(),
                                                 ],
                                               ),
-                                            );
-                                          },
-                                        ),
-                                      ),
+                                            ),
+                                          ),
                                     ],
                                   ),
                                 ),
@@ -483,3 +466,5 @@ class InventoryDetailsPopup extends StatelessWidget {
     );
   }
 }
+
+
