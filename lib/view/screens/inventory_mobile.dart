@@ -14,48 +14,48 @@ class InventoryMobile extends StatefulWidget {
 class _InventoryMobileState extends State<InventoryMobile> {
   List<Inventory> items = [];
 
-    @override
-    void initState() {
+  String selectedCategory = 'All Categories';
+  List<String> categories = ['All Categories'];
+
+  TextEditingController searchController = TextEditingController();
+
+  @override
+  void initState() {
     super.initState();
     loadInventory();
     loadCategories();
-
-}
+  }
 
   Future<void> loadInventory() async {
-  try {
-    final data = await ApiService.getAllInventoryItems();
+    try {
+      final data = await ApiService.getAllInventoryItems();
 
-    setState(() {
-      items = data
-          .map((item) => Inventory.fromJson(item))
-          .toList();
-    });
-        print('items length: ${items.length}');
+      setState(() {
+        items = data;
+      });
 
-  } catch (e) {
-    print(e);
+      print('items length: ${items.length}');
+    } catch (e) {
+      print('loadInventory error: $e');
+    }
   }
-}
 
+  Future<void> loadCategories() async {
+    try {
+      final data = await ApiService.getAllCategories();
 
-Future<void> loadCategories() async {
-  try {
-    final data = await ApiService.getAllCategories();
+      setState(() {
+        categories = [
+          'All Categories',
+          ...data.map((item) => item['category_name'].toString()),
+        ];
+      });
 
-    setState(() {
-      categories = [
-        'All Categories',
-        ...data.map((item) => item['category_name'].toString()),
-      ];
-    });
-
-    print('categories length: ${categories.length}');
-  } catch (e) {
-    print('loadCategories error: $e');
+      print('categories length: ${categories.length}');
+    } catch (e) {
+      print('loadCategories error: $e');
+    }
   }
-}
-
 
   Future<void> searchInventory(String name) async {
     try {
@@ -67,9 +67,7 @@ Future<void> loadCategories() async {
       final data = await ApiService.searchInventoryByName(name);
 
       setState(() {
-        items = data
-            .map((item) => Inventory.fromJson(item))
-            .toList();
+        items = data;
       });
 
       print('search items length: ${items.length}');
@@ -78,41 +76,33 @@ Future<void> loadCategories() async {
     }
   }
 
-
   Future<void> filterByCategory(String categoryName) async {
-  try {
-    if (categoryName == 'All Categories') {
-      loadInventory();
-      return;
+    try {
+      if (categoryName == 'All Categories') {
+        loadInventory();
+        return;
+      }
+
+      final data = await ApiService.getAllCategories();
+
+      final selected = data.firstWhere(
+        (item) => item['category_name'] == categoryName,
+      );
+
+      final int categoryId = selected['category_id'];
+
+      final inventoryData =
+          await ApiService.getInventoryByCategoryID(categoryId);
+
+      setState(() {
+        items = inventoryData;
+      });
+
+      print('filtered items length: ${items.length}');
+    } catch (e) {
+      print('filterByCategory error: $e');
     }
-
-    final data = await ApiService.getAllCategories();
-
-    final selected = data.firstWhere(
-      (item) => item['category_name'] == categoryName,
-    );
-
-    final int categoryId = selected['category_id'];
-
-    final inventoryData =
-        await ApiService.getInventoryByCategoryID(categoryId);
-
-    setState(() {
-      items = inventoryData
-          .map((item) => Inventory.fromJson(item))
-          .toList();
-    });
-
-    print('filtered items length: ${items.length}');
-  } catch (e) {
-    print('filterByCategory error: $e');
   }
-}
-
-
-String selectedCategory = 'All Categories';
-
-List<String> categories = ['All Categories'];
 
   int get totalItems => items.length;
 
@@ -124,8 +114,6 @@ List<String> categories = ['All Categories'];
 
   int get archivedItems =>
       items.where((item) => item.status == 'Archived').length;
-
-  TextEditingController searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -167,17 +155,17 @@ List<String> categories = ['All Categories'];
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child:  TextField(
-                          controller:searchController,
-                          onChanged: (value){
-                          searchInventory(value);
-                          },
-                  decoration: InputDecoration(
+                child: TextField(
+                  controller: searchController,
+                  onChanged: (value) {
+                    searchInventory(value);
+                  },
+                  decoration: const InputDecoration(
                     hintText: 'Search inventory...',
                     prefixIcon: Icon(Icons.search),
                     border: InputBorder.none,
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 16)
+                    contentPadding: EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
@@ -202,19 +190,19 @@ List<String> categories = ['All Categories'];
                     );
                   }).toList(),
                   onChanged: (value) {
-                    if(value== null)return;
+                    if (value == null) return;
 
-                      setState(() {
+                    setState(() {
                       selectedCategory = value;
                     });
+
                     filterByCategory(value);
-                    },
+                  },
                 ),
               ),
 
               const SizedBox(height: 16),
 
-            //board 
               Row(
                 children: [
                   _buildSmallCard('Total', totalItems.toString()),
@@ -224,7 +212,6 @@ List<String> categories = ['All Categories'];
               ),
               const SizedBox(height: 10),
               Row(
-
                 children: [
                   _buildSmallCard('Archive', archivedItems.toString()),
                   const SizedBox(width: 10),
@@ -239,14 +226,12 @@ List<String> categories = ['All Categories'];
 
               const Text(
                 'Inventory List',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(height: 10),
 
+              // 📋 LIST
               Expanded(
                 child: ListView.builder(
                   itemCount: items.length,
@@ -279,11 +264,19 @@ List<String> categories = ['All Categories'];
                           Text('Location: ${item.location}'),
                           const SizedBox(height: 12),
 
-                          //view button
                           ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ColorConstants.ubtsYellow,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
                             onPressed: () {
-                              showDialog(context: context, 
-                              builder: (context) => InventoryDetailsPopup(item: item)
+                              showDialog(
+                                context: context,
+                                builder: (context) =>
+                                    InventoryDetailsPopup(item: item),
                               );
                             },
                             child: const Text('View'),
@@ -323,7 +316,7 @@ List<String> categories = ['All Categories'];
   }
 }
 
-
+// popup stays same
 class InventoryDetailsPopup extends StatelessWidget {
   final Inventory item;
 
@@ -359,19 +352,8 @@ class InventoryDetailsPopup extends StatelessWidget {
             const SizedBox(height: 8),
             Text("Status: ${item.status}"),
             const SizedBox(height: 8),
-            Text("Created At: ${item.createdAt.toLocal().toString().split('.')[0]}",),            
-            const SizedBox(height: 8),
-            Text("Updated At: ${item.updatedAt.toLocal().toString().split('.')[0]}",),
-            const SizedBox(height: 8),
-        
-            if (item.deletedAt != null)
-            Text("Deleted At: ${item.deletedAt!.toLocal().toString().split('.')[0]}",),
-            const SizedBox(height: 8),
-
             Text("Location: ${item.location}"),
-            const SizedBox(height: 8),
-
-
+            const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,
               child: ElevatedButton(
