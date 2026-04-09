@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:welcome_project_fe/model/user.dart';
 import 'package:welcome_project_fe/model/activity.dart';
-import 'package:welcome_project_fe/util/ImageConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:welcome_project_fe/api_service.dart';
 import 'package:welcome_project_fe/util/MobileSideBar.dart';
@@ -45,6 +44,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController newPasswordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+  final TextEditingController imageUrlController = TextEditingController();
 
   @override
   void initState() {
@@ -59,7 +59,65 @@ class ProfileScreenState extends State<ProfileScreen> {
     currentPasswordController.dispose();
     newPasswordController.dispose();
     confirmPasswordController.dispose();
+    imageUrlController.dispose();
     super.dispose();
+  }
+
+  void showImageUrlDialog(BuildContext context) {
+    // We use the existing controller so it shows the current URL if there is one
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Allows keyboard to push it up
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom:
+              MediaQuery.of(context).viewInsets.bottom + 20, // Keyboard padding
+          left: 20,
+          right: 20,
+          top: 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Update Profile Image",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: imageUrlController,
+              decoration: const InputDecoration(
+                labelText: "Paste Image URL",
+                hintText: "https://example.com/image.jpg",
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.image),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(context); // Close the popup
+                  await saveProfileChanges(); // Use your existing save logic!
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ColorConstants.ubtsBlue,
+                  padding: const EdgeInsets.all(15),
+                ),
+                child: const Text(
+                  "Save Image",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> loadUserData() async {
@@ -88,8 +146,8 @@ class ProfileScreenState extends State<ProfileScreen> {
         currentUser = user;
         usernameController.text = user.username;
         emailController.text = user.userEmail;
+        imageUrlController.text = user.profileImageUrl ?? '';
         this.activities = activities;
-
         isLoading = false;
       });
     } catch (e) {
@@ -111,6 +169,7 @@ class ProfileScreenState extends State<ProfileScreen> {
         userId!,
         usernameController.text.trim(),
         emailController.text.trim(),
+        imageUrlController.text.trim(),
       );
       await loadUserData();
       if (mounted) {
@@ -265,17 +324,37 @@ class ProfileScreenState extends State<ProfileScreen> {
           children: [
             CircleAvatar(
               radius: 50,
-              backgroundImage: NetworkImage('https://cdn.tourradar.com/s3/traveller/original/383701_3BCgWfah.jpg'),
-            ),
-            Positioned(
-              child: IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.add_a_photo),
+              backgroundImage: NetworkImage(
+                (currentUser?.profileImageUrl != null &&
+                        currentUser!.profileImageUrl!.isNotEmpty)
+                    ? currentUser!.profileImageUrl!
+                    : 'https://cdn.tourradar.com/s3/traveller/original/383701_3BCgWfah.jpg', // Default if empty
               ),
-              bottom: -10,
-              left: 80,
             ),
 
+            const SizedBox(height: 12),
+
+            OutlinedButton.icon(
+              onPressed: () => showImageUrlDialog(context),
+              icon: const Icon(Icons.add_a_photo, size: 18),
+              label: const Text("Change Photo via URL"),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.blue,
+                side: const BorderSide(
+                  color: Colors.blue,
+                  width: 1,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    8,
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
 
             Text(
@@ -283,33 +362,13 @@ class ProfileScreenState extends State<ProfileScreen> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 10),
 
             const Divider(),
 
             Text('Member Since: ${formatDate(currentUser?.createdAt)}'),
 
-            const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  SharedPreferences.getInstance().then((prefs) {
-                    prefs.remove('user_id');
-                  });
-                  context.go('/login');
-                },
-                icon: const Icon(Icons.logout, color: Colors.red),
-                label: const Text(
-                  'Logout',
-                  style: TextStyle(color: Colors.red),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red),
-                ),
-              ),
-            ),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -365,41 +424,48 @@ class ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 20),
 
         buildSectionCard(
-  title: "Recent Activity",
-  subtitle: Text("Showing ${activities.length} recent updates, scroll to see all updates"), // Change subtitle to be clear
-  child: activities.isEmpty
-      ? const Text("No recent activity found.")
-      : SizedBox(
-          height: 200, // Reduced height to FORCE scrolling even with fewer items
-          child: Scrollbar(
-            thumbVisibility: true,
-            child: SingleChildScrollView(
-              // PHYSICS: This helps with scrolling feel on different platforms
-              physics: const AlwaysScrollableScrollPhysics(), 
-              child: Column(
-                children: activities.asMap().entries.map((entry) { // Removed .take(4)
-                  int index = entry.key;
-                  ActivityModel activity = entry.value;
-                  var details = _getActivityDetails(activity.activityType);
+          title: "Recent Activity",
+          subtitle: Text(
+            "Showing ${activities.length} recent updates, scroll to see all updates",
+          ), // Change subtitle to be clear
+          child: activities.isEmpty
+              ? const Text("No recent activity found.")
+              : SizedBox(
+                  height:
+                      200, // Reduced height to FORCE scrolling even with fewer items
+                  child: Scrollbar(
+                    thumbVisibility: true,
+                    child: SingleChildScrollView(
+                      // PHYSICS: This helps with scrolling feel on different platforms
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        children: activities.asMap().entries.map((entry) {
+                          // Removed .take(4)
+                          int index = entry.key;
+                          ActivityModel activity = entry.value;
+                          var details = _getActivityDetails(
+                            activity.activityType,
+                          );
 
-                  return Column(
-                    children: [
-                      buildActivityRow(
-                        icon: details['icon'],
-                        color: details['color'],
-                        title: activity.activityType.toUpperCase(),
-                        time: formatDate(activity.createdAt),
+                          return Column(
+                            children: [
+                              buildActivityRow(
+                                icon: details['icon'],
+                                color: details['color'],
+                                title: activity.activityType.toUpperCase(),
+                                time: formatDate(activity.createdAt),
+                              ),
+                              // Only hide divider for the ABSOLUTE last item
+                              if (index != activities.length - 1)
+                                buildDivider(),
+                            ],
+                          );
+                        }).toList(),
                       ),
-                      // Only hide divider for the ABSOLUTE last item
-                      if (index != activities.length - 1) buildDivider(),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
+                    ),
+                  ),
+                ),
         ),
-),
       ],
     );
   }
@@ -436,6 +502,17 @@ class ProfileScreenState extends State<ProfileScreen> {
           controller: emailController,
           decoration: const InputDecoration(
             labelText: 'Email Address',
+            border: OutlineInputBorder(),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        TextField(
+          controller: imageUrlController,
+          decoration: const InputDecoration(
+            labelText: 'Profile Image URL',
+            hintText: 'Paste a link to an image (https://...)',
             border: OutlineInputBorder(),
           ),
         ),

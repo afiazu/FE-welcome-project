@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/material.dart';
 import '../model/supplier.dart';
 
@@ -65,3 +66,5 @@ class SupplierTable extends StatelessWidget {
     );
   }
 }
+
+*/

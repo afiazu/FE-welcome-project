@@ -3,13 +3,13 @@ import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:welcome_project_fe/view/screens/inventory.dart';
 import '../../util/welcomeSection.dart';
 import '../../util/dashboardBox.dart';
-import '../../util/supplier_carousel.dart';
 import '../../util/info_panels.dart';
 import '../../model/supplier.dart';
-import '../../api_service.dart'; 
+import '../../api_service.dart';
 import 'package:welcome_project_fe/util/MobileSideBar.dart';
 import 'package:welcome_project_fe/util/DesktopSideBar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../model/low_stock_item.dart';
 import '../../model/category.dart';
@@ -23,17 +23,27 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  String selectedCard = "Total Items";
+  String selectedCard = "Low Stock";
+
   bool _isLoading = true;
-  String? _errorMessage;
   bool _isLoadingUser = true;
-  String _username = 'Guest';
-  
+
+  String? _errorMessage;
+  String _username = "Guest";
+
   List<Supplier> _suppliers = [];
+  List<Supplier> _filteredSuppliers = [];
+
   Map<String, dynamic> _dashboardStats = {};
+
   List<LowStockItem> _lowStockItems = [];
   List<LowStockItem> _discontinuedItems = [];
   List<Category> _categories = [];
+
+  String _searchQuery = "";
+  bool _showAllSuppliers = false;
+
+  int _initialDisplayCount = 6;
 
   @override
   void initState() {
@@ -48,41 +58,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _fetchUsername() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
-      // Try to get username from SharedPreferences first
+
       String? savedUsername = prefs.getString('username');
-      
+
       if (savedUsername != null) {
-        // Username found in SharedPreferences
         setState(() {
           _username = savedUsername;
           _isLoadingUser = false;
         });
-        print('Username loaded from SharedPreferences: $_username');
         return;
       }
-      
-      // If no username in SharedPreferences, fall back to API call
+
       if (widget.userId == null) {
         setState(() {
           _isLoadingUser = false;
         });
         return;
       }
-      
-      // Fallback: Fetch from API
+
       final user = await ApiService.getUserById(widget.userId.toString());
-      
-      // Save to SharedPreferences for next time
+
       await prefs.setString('username', user.username);
-      
+
       setState(() {
         _username = user.username;
         _isLoadingUser = false;
       });
-      
     } catch (e) {
-      print('Error fetching username: $e');
       setState(() {
         _isLoadingUser = false;
       });
@@ -95,9 +97,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         _lowStockItems = items;
       });
-    } catch (e) {
-      print('Error fetching low stock items: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> _fetchDiscontinuedItems() async {
@@ -106,9 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         _discontinuedItems = items;
       });
-    } catch (e) {
-      print('Error fetching discontinued items: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> _fetchCategories() async {
@@ -117,9 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         _categories = categories;
       });
-    } catch (e) {
-      print('Error fetching categories: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> _fetchData() async {
@@ -136,6 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       setState(() {
         _suppliers = results[0] as List<Supplier>;
+        _filteredSuppliers = _suppliers;
         _dashboardStats = results[1] as Map<String, dynamic>;
         _isLoading = false;
       });
@@ -153,28 +150,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await _fetchLowStockItems();
     await _fetchDiscontinuedItems();
     await _fetchCategories();
+
+    setState(() {
+      _searchQuery = "";
+      _filteredSuppliers = _suppliers;
+      _showAllSuppliers = false;
+    });
   }
 
-@override
+  void _searchSuppliers(String query) {
+    setState(() {
+      _searchQuery = query;
+
+      if (query.isEmpty) {
+        _filteredSuppliers = _suppliers;
+      } else {
+        _filteredSuppliers = _suppliers.where((supplier) {
+          return supplier.name.toLowerCase().contains(query.toLowerCase());
+        }).toList();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final bool isDesktop = screenWidth >= 800; // Standard desktop threshold
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    final bool isDesktop = screenWidth >= 800;
     final bool isMobile = screenWidth < 600;
+
+    int displayedSuppliers = _showAllSuppliers
+        ? _filteredSuppliers.length
+        : _initialDisplayCount;
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: ColorConstants.ubtsBlue,
         automaticallyImplyLeading: !isDesktop,
-        elevation: 0,
         title: const Text(
-          'User Dashboard',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          "Dashboard",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
         ),
       ),
       drawer: isDesktop ? null : const Mobilesidebar(),
       body: Stack(
         children: [
-          // Main 
           Positioned.fill(
             child: Padding(
               padding: EdgeInsets.only(left: isDesktop ? 70 : 0),
@@ -182,39 +206,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onRefresh: _refreshData,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: _isLoadingUser
-                            ? const LinearProgressIndicator()
-                            : WelcomeSection(userName: _username),
-                      ),
-                      
-                      const SizedBox(height: 20),
+                      _isLoadingUser
+                          ? const LinearProgressIndicator()
+                          : WelcomeSection(userName: _username),
+
+                      const SizedBox(height: 16),
 
                       _isLoading
                           ? const Center(child: CircularProgressIndicator())
-                          : (isMobile
-                              ? _buildMobileDashboardBoxes()
-                              : _buildDesktopDashboardBoxes()),
+                          : _buildStatsGrid(isMobile),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 24),
 
-                      isMobile ? _buildMobileLayout() : _buildDesktopLayout(),
-                      
-                      const SizedBox(height: 100),
+                      _buildRightPanel(),
+
+                      const SizedBox(height: 24),
+
+                      _buildSupplierSection(displayedSuppliers),
+
+                      const SizedBox(height: 60),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-
-          // Desktop Sidebar
           if (isDesktop)
             const Positioned(
               left: 0,
@@ -227,8 +247,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildDesktopDashboardBoxes() {
-    return Row(
+  Widget _buildStatsGrid(bool isMobile) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: isMobile ? 2 : 4,
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      childAspectRatio: isMobile ? 1.2 : 1.6,
       children: [
         DashboardBox(
           title: 'Total Items',
@@ -236,10 +262,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           icon: Icons.inventory,
           iconColor: Colors.blue,
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen()));
-          },
+            context.go('/inventory');
+          }
         ),
-        const SizedBox(width: 12),
         DashboardBox(
           title: 'Low Stock',
           value: _dashboardStats['lowStock']?.toString() ?? '0',
@@ -247,7 +272,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           iconColor: Colors.orange,
           onTap: () => _updatePanel('Low Stock'),
         ),
-        const SizedBox(width: 12),
         DashboardBox(
           title: 'Discontinued',
           value: _discontinuedItems.length.toString(),
@@ -255,7 +279,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           iconColor: Colors.red,
           onTap: () => _updatePanel('Discontinued'),
         ),
-        const SizedBox(width: 12),
         DashboardBox(
           title: 'Categories',
           value: _dashboardStats['categories']?.toString() ?? '0',
@@ -267,121 +290,113 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // mobile 2x2
-  Widget _buildMobileDashboardBoxes() {
+  Widget _buildSupplierSection(int displayedSuppliers) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            DashboardBox(
-              title: 'Total Items',
-              value: _dashboardStats['totalItems']?.toString() ?? '0',
-              icon: Icons.inventory,
-              iconColor: Colors.blue,
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen()));
-              },
-            ),
-            const SizedBox(width: 12),
-            DashboardBox(
-              title: 'Low Stock',
-              value: _dashboardStats['lowStock']?.toString() ?? '0',
-              icon: Icons.warning,
-              iconColor: Colors.orange,
-              onTap: () => _updatePanel('Low Stock'),
-            ),
-          ],
+        TextField(
+          decoration: InputDecoration(
+            hintText: 'Search suppliers...',
+            prefixIcon: const Icon(Icons.search),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          onChanged: _searchSuppliers,
         ),
+
         const SizedBox(height: 12),
-        Row(
-          children: [
-            DashboardBox(
-              title: 'Discontinued',
-              value: _discontinuedItems.length.toString(),
-              icon: Icons.cancel,
-              iconColor: Colors.red,
-              onTap: () => _updatePanel('Discontinued'),
+
+        _buildSupplierGrid(displayedSuppliers),
+
+        if (_filteredSuppliers.length > _initialDisplayCount)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+              child: TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _showAllSuppliers = !_showAllSuppliers;
+                  });
+                },
+                icon: Icon(
+                  _showAllSuppliers
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                ),
+                label: Text(
+                  _showAllSuppliers
+                      ? "Show Less"
+                      : "Show More (${_filteredSuppliers.length - _initialDisplayCount})",
+                ),
+              ),
             ),
-            const SizedBox(width: 12),
-            DashboardBox(
-              title: 'Categories',
-              value: _dashboardStats['categories']?.toString() ?? '0',
-              icon: Icons.category,
-              iconColor: Colors.purple,
-              onTap: () => _updatePanel('Categories'),
-            ),
-          ],
-        ),
+          ),
       ],
     );
   }
 
-  // left right
-  Widget _buildDesktopLayout() {
-    return SizedBox(
-      height: 260,
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildSupplierSection(),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _buildRightPanel(),
-          ),
-        ],
+  Widget _buildSupplierGrid(int itemCount) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    int crossAxisCount;
+
+    if (screenWidth < 600) {
+      crossAxisCount = 1;
+    } else if (screenWidth < 900) {
+      crossAxisCount = 2;
+    } else if (screenWidth < 1200) {
+      crossAxisCount = 3;
+    } else {
+      crossAxisCount = 4;
+    }
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: itemCount > _filteredSuppliers.length
+          ? _filteredSuppliers.length
+          : itemCount,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.8,
       ),
+      itemBuilder: (context, index) {
+        final supplier = _filteredSuppliers[index];
+        return _buildSupplierCard(supplier);
+      },
     );
   }
 
-  // up down
-  Widget _buildMobileLayout() {
-    return Column(
-      children: [
-        SizedBox(
-          height: 260,
-          child: _buildSupplierSection(),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 260,
-          child: _buildRightPanel(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSupplierSection() {
-    if (_errorMessage != null) {
-      return Center(
+  Widget _buildSupplierCard(Supplier supplier) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 8),
-            Text('Error: $_errorMessage'),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: _fetchData,
-              child: const Text('Retry'),
+            Text(
+              supplier.name,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              "Phone: ${supplier.phone}",
+              style: const TextStyle(fontSize: 11),
+            ),
+            Text(
+              "Email: ${supplier.email}",
+              style: const TextStyle(fontSize: 11),
+            ),
+            Text(
+              "Address: ${supplier.address}",
+              style: const TextStyle(fontSize: 11),
             ),
           ],
         ),
-      );
-    }
-
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_suppliers.isEmpty) {
-      return const Center(
-        child: Text('No suppliers found'),
-      );
-    }
-
-    return SupplierCarousel(
-      suppliers: _suppliers,
+      ),
     );
   }
 
@@ -392,48 +407,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildRightPanel() {
-    switch (selectedCard) {
-      case 'Low Stock':
-        return LowStockPanel(lowStockItems: _lowStockItems);
-
-      case 'Discontinued':
-        return DiscontinuedPanel(discontinuedItems: _discontinuedItems);
-
-      case 'Categories':
-        return CategoriesPanel(categories: _categories);
-
-      default:
-        return _infoBox(
-          "Total Items",
-          "${_dashboardStats['totalItems'] ?? 0} items in inventory"
-        );
-    }
-  }
-
-  Widget _infoBox(String title, String content) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: 400, // Limit the height of the right panel
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(content),
-          ],
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(child: _getPanelContent()),
         ),
       ),
     );
+  }
+
+  Widget _getPanelContent() {
+    switch (selectedCard) {
+      case 'Low Stock':
+        return LowStockPanel(lowStockItems: _lowStockItems);
+      case 'Discontinued':
+        return DiscontinuedPanel(discontinuedItems: _discontinuedItems);
+      case 'Categories':
+        return CategoriesPanel(categories: _categories);
+      default:
+        return LowStockPanel(lowStockItems: _lowStockItems);
+    }
   }
 }

@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/material.dart';
 import '../model/supplier.dart';
 
@@ -182,3 +183,4 @@ class _SupplierCarouselState extends State<SupplierCarousel> {
     );
   }
 }
+*/

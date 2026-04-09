@@ -6,6 +6,9 @@ import 'package:welcome_project_fe/model/user.dart';
 import '../model/supplier.dart';
 import '../model/low_stock_item.dart';
 import 'model/category.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
 
 class ApiService {
   static const String _baseUrl = 'http://localhost:3000';
@@ -43,7 +46,7 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getDashboardStats() async {
-    final url = Uri.parse('$_baseUrl/dashboard/stats');
+    final url = Uri.parse('$_baseUrl/inventory/dashboard/stats');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -202,9 +205,9 @@ class ApiService {
     }
   }
 
-  static Future<void> updateUserInfo(String userId, String username, String email) async {
+  static Future<void> updateUserInfo(String userId, String username, String email, String profileImageUrl) async {
     final url = Uri.parse('$_baseUrl/users/$userId');
-    final body = jsonEncode({'user_name': username, 'user_email': email});
+    final body = jsonEncode({'user_name': username, 'user_email': email, 'user_profileImageUrl': profileImageUrl});
 
     try {
       final response = await http.put(
@@ -348,6 +351,22 @@ static Future<List<Inventory>> getArchivedItems() async {
     } catch (e) {
       throw e.toString();
     }
-  }  
+  } 
+
+  static Future<void> logout(BuildContext context) async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      
+      await preferences.clear();
+
+      // Back to Login Screen
+      if (context.mounted) {
+        context.go('/login');
+      }
+      
+    } catch (e) {
+      print('Error during logout: $e');
+    }
+  }
 
 }
