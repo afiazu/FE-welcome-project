@@ -46,7 +46,7 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getDashboardStats() async {
-    final url = Uri.parse('$_baseUrl/inventory/dashboard/stats');
+    final url = Uri.parse('$_baseUrl/dashboard/stats');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
