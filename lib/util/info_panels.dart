@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../model/low_stock_item.dart';
 import '../model/category.dart';
 import '../view/screens/inventory.dart'; 
+import 'package:go_router/go_router.dart';
 
 class LowStockPanel extends StatelessWidget {
   final List<LowStockItem> lowStockItems;
@@ -154,12 +155,7 @@ Widget _buildCategoryGrid({
           TextButton(
             onPressed: () {
               // go to inventory page
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const InventoryScreen(),
-                ),
-              );
+            context.go('/inventory');
             },
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

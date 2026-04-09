@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:welcome_project_fe/model/inventory.dart';
+import 'package:welcome_project_fe/model/low_stock_item.dart';
 import 'package:welcome_project_fe/api_service.dart';
 import 'package:welcome_project_fe/util/DesktopSideBar.dart';
 
@@ -12,10 +13,42 @@ class InventoryDesktop extends StatefulWidget {
 }
 
 class _InventoryDesktopState extends State<InventoryDesktop> {
+
+Widget _buildHeaderCell(String text, {bool isCenter = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      child: isCenter
+          ? Center(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
+          : Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+    );
+  }
+
+  Widget _buildBodyCell(String text, {bool isCenter = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      child: isCenter ? Center(child: Text(text)) : Text(text),
+    );
+  }
+  
   List<Inventory> items = [];
   String selectedCategory = 'All Categories';
   List<String> categories = ['All Categories'];
   TextEditingController searchController = TextEditingController();
+  String selectedStatusCard = 'Total';
 
   @override
   void initState() {
@@ -24,83 +57,124 @@ class _InventoryDesktopState extends State<InventoryDesktop> {
     loadCategories();
   }
 
-  Future<void> loadInventory() async {
-    try {
-      final data = await ApiService.getAllInventoryItems();
+    Future<void> loadInventory() async {
+      try {
+        final data = await ApiService.getAllInventoryItems();
 
-      setState(() {
-        items = data.map((item) => Inventory.fromJson(item)).toList();
-      });
+        
+        setState(() {
+          items = data;
+          selectedStatusCard = 'Total';
+        });
 
-      print('items length: ${items.length}');
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  Future<void> loadCategories() async {
-    try {
-      final data = await ApiService.getAllCategories();
-
-      setState(() {
-        categories = [
-          'All Categories',
-          ...data.map((item) => item['category_name'].toString()),
-        ];
-      });
-
-      print('categories length: ${categories.length}');
-    } catch (e) {
-      print('loadCategories error: $e');
-    }
-  }
-
-  Future<void> searchInventory(String name) async {
-    try {
-      if (name.isEmpty) {
-        loadInventory();
-        return;
+        print('items length: ${items.length}');
+      } catch (e) {
+        print('loadInventory error: $e');
       }
-
-      final data = await ApiService.searchInventoryByName(name);
-
-      setState(() {
-        items = data.map((item) => Inventory.fromJson(item)).toList();
-      });
-
-      print('search items length: ${items.length}');
-    } catch (e) {
-      print('searchInventory error: $e');
     }
-  }
 
-  Future<void> filterByCategory(String categoryName) async {
-    try {
-      if (categoryName == 'All Categories') {
-        loadInventory();
-        return;
+    Future<void> loadCategories() async {
+      try {
+        final data = await ApiService.getAllCategories();
+
+        setState(() {
+          categories = [
+            'All Categories',
+            ...data.map((item) => item['category_name'].toString()),
+          ];
+        });
+
+        print('categories length: ${categories.length}');
+      } catch (e) {
+        print('loadCategories error: $e');
       }
-
-      final data = await ApiService.getAllCategories();
-
-      final selected = data.firstWhere(
-        (item) => item['category_name'] == categoryName,
-      );
-
-      final int categoryId = selected['category_id'];
-
-      final inventoryData =
-          await ApiService.getInventoryByCategoryID(categoryId);
-
-      setState(() {
-        items = inventoryData.map((item) => Inventory.fromJson(item)).toList();
-      });
-
-      print('filtered items length: ${items.length}');
-    } catch (e) {
-      print('filterByCategory error: $e');
     }
-  }
+
+    Future<void> searchInventory(String name) async {
+      try {
+        if (name.isEmpty) {
+          loadInventory();
+          return;
+        }
+
+        final data = await ApiService.searchInventoryByName(name);
+
+        setState(() {
+          items = data;
+        });
+
+        print('search items length: ${items.length}');
+      } catch (e) {
+        print('searchInventory error: $e');
+      }
+    }
+
+    Future<void> filterByCategory(String categoryName) async {
+      try {
+        if (categoryName == 'All Categories') {
+          loadInventory();
+          return;
+        }
+
+        final data = await ApiService.getAllCategories();
+
+        final selected = data.firstWhere(
+          (item) => item['category_name'] == categoryName,
+        );
+
+        final int categoryId = selected['category_id'];
+
+        final inventoryData =
+            await ApiService.getInventoryByCategoryID(categoryId);
+
+        setState(() {
+          items = inventoryData;
+        });
+
+        print('filtered items length: ${items.length}');
+      } catch (e) {
+        print('filterByCategory error: $e');
+      }
+    }
+
+    Future<void> loadActiveItems() async {
+      try {
+        final data = await ApiService.getActiveItems();
+
+        setState(() {
+          items = data;
+          selectedStatusCard = 'Active';
+        });
+      } catch (e) {
+        print('loadActiveItems error: $e');
+      }
+    }
+
+    Future<void> loadArchivedItems() async {
+      try {
+        final data = await ApiService.getArchivedItems();
+
+        setState(() {
+          items = data;
+          selectedStatusCard = 'Archive';
+        });
+      } catch (e) {
+        print('loadArchivedItems error: $e');
+      }
+    }
+/* 
+    Future<void> loadDiscontinuedItems() async {
+      try {
+        final data = await ApiService.getDiscontinuedItems();
+
+        setState(() {
+          items = data;
+          selectedStatusCard = 'Discontinued';
+        });
+      } catch (e) {
+        print('loadDiscontinuedItems error: $e');
+      }
+    } */
 
   int get totalItems => items.length;
 
@@ -208,16 +282,21 @@ class _InventoryDesktopState extends State<InventoryDesktop> {
 
                               Row(
                                 children: [
-                                  _buildCard('Total', totalItems.toString()),
+                                  _buildCard('Total', totalItems.toString(), () {
+                                    loadInventory();
+                                  }),
                                   const SizedBox(width: 12),
-                                  _buildCard('Active', activeItems.toString()),
+                                  _buildCard('Active', activeItems.toString(), () {
+                                    loadActiveItems();
+                                  }),
                                   const SizedBox(width: 12),
-                                  _buildCard('Archive', archivedItems.toString()),
+                                  _buildCard('Archive', archivedItems.toString(), () {
+                                    loadArchivedItems();
+                                  }),
                                   const SizedBox(width: 12),
-                                  _buildCard(
-                                    'Discontinued',
-                                    discontinuedItems.toString(),
-                                  ),
+                                  _buildCard('Discontinued', discontinuedItems.toString(), () {
+                                   // loadDiscontinuedItems();
+                                  }),
                                 ],
                               ),
 
@@ -242,135 +321,86 @@ class _InventoryDesktopState extends State<InventoryDesktop> {
                                       ),
                                       const SizedBox(height: 12),
 
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 10,
-                                          horizontal: 8,
-                                        ),
-                                        color: ColorConstants.ubtsBlue,
-                                        child: const Row(
-                                          children: [
-                                            Expanded(
-                                              flex: 1,
-                                              child: Text(
-                                                "Name",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: Center(
-                                                child: Text(
-                                                  "Qty",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: Text(
-                                                "Status",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: Text(
-                                                "Location",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: Text(
-                                                "Action",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
 
                                       Expanded(
-                                        child: ListView.builder(
-                                          itemCount: items.length,
-                                          itemBuilder: (context, index) {
-                                            final item = items[index];
-
-                                            return Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                vertical: 12,
-                                                horizontal: 8,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                border: Border(
-                                                  bottom: BorderSide(
-                                                    color: Colors.grey.shade300,
-                                                  ),
+                                            child: SingleChildScrollView(
+                                              child: Table(
+                                                border: TableBorder(
+                                                  horizontalInside: BorderSide(color: Colors.grey.shade300),
+                                                  verticalInside: BorderSide(color: Colors.grey.shade300),
+                                                  top: BorderSide(color: Colors.grey.shade300),
+                                                  bottom: BorderSide(color: Colors.grey.shade300),
                                                 ),
-                                              ),
-                                              child: Row(
+                                                columnWidths: const {
+                                                  0: FlexColumnWidth(2),
+                                                  1: FlexColumnWidth(1),
+                                                  2: FlexColumnWidth(1.5),
+                                                  3: FlexColumnWidth(1.5),
+                                                  4: FlexColumnWidth(1.5),
+                                                },
+                                                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                                                 children: [
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(item.name),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Center(
-                                                      child: Text(
-                                                        item.quantity.toString(),
-                                                      ),
+                                                  TableRow(
+                                                    decoration: const BoxDecoration(
+                                                      color: ColorConstants.ubtsBlue,
                                                     ),
+                                                    children: [
+                                                      _buildHeaderCell("Name"),
+                                                      _buildHeaderCell("Qty", isCenter: true),
+                                                      _buildHeaderCell("Status"),
+                                                      _buildHeaderCell("Location"),
+                                                      _buildHeaderCell("Action"),
+                                                    ],
                                                   ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(item.status),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(item.location),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Row(
+
+                                                  ...items.map((item) {
+                                                    return TableRow(
                                                       children: [
-                                                        ElevatedButton(
-                                                          onPressed: () {
-                                                            showDialog(
-                                                              context: context,
-                                                              builder: (context) =>
-                                                                  InventoryDetailsPopup(
-                                                                item: item,
-                                                              ),
-                                                            );
-                                                          },
-                                                          child: const Text("View"),
+                                                        _buildBodyCell(item.name),
+                                                        _buildBodyCell(item.quantity.toString(), isCenter: true),
+                                                        _buildBodyCell(item.status),
+                                                        _buildBodyCell(item.location),
+                                                        Padding(
+                                                          padding: const EdgeInsets.all(8),
+                                                          child: Align(
+                                                            alignment: Alignment.centerLeft,
+                                                            child: ElevatedButton(
+                                                            style: ButtonStyle(
+
+                                                              backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                                                                if (states.contains(WidgetState.hovered) ||
+                                                                    states.contains(WidgetState.pressed)) {
+                                                                  return ColorConstants.ubtsBlue;
+                                                                }
+                                                                return ColorConstants.ubtsYellow;
+                                                              }),
+                                                              foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                                                                if (states.contains(WidgetState.hovered) ||
+                                                                    states.contains(WidgetState.pressed)) {
+                                                                  return Colors.white;
+                                                                }
+                                                                return Colors.black;
+                                                              }),
+                                                            ),
+
+                                                              
+                                                              onPressed: () {
+                                                                showDialog(
+                                                                  context: context,
+                                                                  builder: (context) => InventoryDetailsPopup(item: item),
+                                                                );
+                                                              },
+                                                              child: const Text("View"),
+                                                            ),
+                                                          ),
                                                         ),
                                                       ],
-                                                    ),
-                                                  ),
+                                                    );
+                                                  }).toList(),
                                                 ],
                                               ),
-                                            );
-                                          },
-                                        ),
-                                      ),
+                                            ),
+                                          ),
                                     ],
                                   ),
                                 ),
@@ -396,14 +426,22 @@ class _InventoryDesktopState extends State<InventoryDesktop> {
     );
   }
 
-  Widget _buildCard(String title, String value) {
-    return Expanded(
+Widget _buildCard(String title, String value, VoidCallback onTap) {
+  final bool isSelected = selectedStatusCard == title;
+
+  return Expanded(
+    child: InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isSelected ? ColorConstants.ubtsBlue.withOpacity(0.08) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(
+            color: isSelected ? ColorConstants.ubtsBlue : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,8 +452,9 @@ class _InventoryDesktopState extends State<InventoryDesktop> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class InventoryDetailsPopup extends StatelessWidget {
@@ -483,3 +522,5 @@ class InventoryDetailsPopup extends StatelessWidget {
     );
   }
 }
+
+
