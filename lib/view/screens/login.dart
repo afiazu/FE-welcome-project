@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:welcome_project_fe/api_service.dart';
 import 'package:welcome_project_fe/util/ImageConstants.dart';
-import 'package:welcome_project_fe/util/IconConstants.dart';
 import 'package:welcome_project_fe/util/ColorConstants.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -155,16 +153,32 @@ class _LoginScreenState extends State<LoginScreen> {
                                   showRightSnackbar(context, 'Login Failed', isError: true);
                                 }
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: ColorConstants.ubtsBlue,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                              style: ButtonStyle(
+                                backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                                  if (states.contains(WidgetState.hovered)) {
+                                    return ColorConstants.ubtsBlue;
+                                  }
+                                  return ColorConstants.ubtsYellow;
+                                }),
+
+                                foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                                  if (states.contains(WidgetState.hovered)) {
+                                    return ColorConstants.textWhite;
+                                  }
+                                  return ColorConstants.textBlack;
+                                }),
+                                padding: WidgetStateProperty.all(
+                                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16)
+                                ),
+                                shape: WidgetStateProperty.all(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               ),
                               child: const Text(
                                 'Login',
                                 style: TextStyle(
-                                  color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),

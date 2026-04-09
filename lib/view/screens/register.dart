@@ -121,7 +121,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                     
-                          const SizedBox(height: 10.0),
+                          const SizedBox(height: 20.0),
                     
                           // Register Button
                           SizedBox(
@@ -151,16 +151,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 }
 
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: ColorConstants.ubtsBlue,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                              style: ButtonStyle(
+                                backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                                  if (states.contains(WidgetState.hovered)) {
+                                    return ColorConstants.ubtsBlue;
+                                  }
+                                  return ColorConstants.ubtsYellow;
+                                }),
+
+                                foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                                  if (states.contains(WidgetState.hovered)) {
+                                    return ColorConstants.textWhite;
+                                  }
+                                  return ColorConstants.textBlack;
+                                }),
+                                padding: WidgetStateProperty.all(
+                                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16)
+                                ),
+                                shape: WidgetStateProperty.all(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               ),
                               child: const Text(
                                 'Sign Up',
                                 style: TextStyle(
-                                  color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
