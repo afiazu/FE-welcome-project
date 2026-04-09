@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:welcome_project_fe/model/activity.dart';
 import 'package:welcome_project_fe/model/user.dart';
 import '../model/supplier.dart';
 import '../model/low_stock_item.dart';
@@ -264,6 +265,28 @@ class ApiService {
     }
   }
 
+  static Future<List<ActivityModel>> getActivitiesByUserId(String userId) async {
+    final url = Uri.parse('$_baseUrl/activities/$userId');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        var body = jsonDecode(response.body);
+        if (body is List) {
+          return body.map((json) => ActivityModel.fromJson(json)).toList();
+        } else if (body is Map<String, dynamic>) {
+          // If it's a single activity, wrap in list
+          return [ActivityModel.fromJson(body)];
+        } else {
+          throw Exception('Unexpected response format');
+        }
+      } else {
+        throw Exception('Activities not found');
+      }
+    } catch (e) {
+      throw Exception('Failed to load activity data: $e');
+    }
+  }
+  
   static Future<Map<String, dynamic>> register(String username,String email, String password) async {
     final url = Uri.parse('$_baseUrl/users/register'); 
     try {
