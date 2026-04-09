@@ -19,6 +19,6 @@ abstract class ColorConstants {
   static const Color successGreen = Color(0xFF1A7634);
   static const Color declineRed = Color(0xFFDC0706);
   static const Color whiteBackground = Color(0xFFFFFFFF);
-
-  
+  static const Color textBlack = Color(0xFF000000);
+  static const Color textWhite = Color(0xFFFFFFFF);
 }
